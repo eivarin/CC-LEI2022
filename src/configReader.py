@@ -8,7 +8,7 @@ class Config():
     def __repr__(self) -> str:
         return f"{self.parameter} {self.type} {self.value}"
 
-class configReader():
+class Configs():
     def __init__(self,filename):
         self.filename = filename
         self.parse()
@@ -16,12 +16,11 @@ class configReader():
     def parse(self):
         f = open(self.filename, 'r')
         lns = f.readlines()
-        result = []
+        result = {}
         for l in lns:
             if l[0] != '#' and l != "\n":
                 values = l.split()
-                c = Config(values[0], values[1], values[2])
-                result.append(c)
+                values[1] = (values[0], values[2])
         f.close()
         self.configs = result
     
