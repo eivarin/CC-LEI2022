@@ -20,7 +20,7 @@ class Configs():
         for l in lns:
             if l[0] != '#' and l != "\n":
                 values = l.split()
-                values[1] = (values[0], values[2])
+                result[values[1]] = (values[0], values[2])
         f.close()
         self.configs = result
     
