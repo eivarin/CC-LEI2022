@@ -7,7 +7,6 @@ class dns_packet:
 
     def decodePacket(self,s):
         return s.decode('utf-8')
-    # Flags - 0 - Q; 1 - R; 10 - A ; 1111 - nulo
     def __init__(self,responseCode,numValues,numAuths,numExtra,responseValues,authValues,extraValues,flags = 1111 ,msgID = random.randint(1,65535),queryInfo = None):
         msg = msgID.__str__()
         msg ++ flags.__str__()
