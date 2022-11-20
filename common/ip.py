@@ -37,7 +37,7 @@ class IP:
         ip_tmp = str(self)
         if self.has_port:
             ip, port = ip_tmp.split(':')
-            return ip, port
+            return ip, int(port)
         return ip_tmp
 
 def check_ip(ip):
