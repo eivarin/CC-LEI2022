@@ -3,10 +3,11 @@ import random
 class dns_packet:
 
     def encodePacket(self,s):
-        return s.encode('utf-8')
+        return s.encode(encoding = "ascii", errors = "replace")
 
     def decodePacket(self,s):
-        return s.decode('utf-8')
+        return s.decode(encoding = "ascii", errors = "replace")
+
     def __init__(self,responseCode,numValues,numAuths,numExtra,responseValues,authValues,extraValues,flags = 1111 ,msgID = random.randint(1,65535),queryInfo = None):
         msg = msgID.__str__()
         msg ++ flags.__str__()
