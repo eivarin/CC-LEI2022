@@ -6,10 +6,10 @@ from random import randrange
 #             IP { a :: Word8, b :: Word8, c :: Word8, d :: Word8 }
 
 class IP:
-    def __init__(self, ip: str, has_port = False):
+    def __init__(self, ip: str, port = None, has_port = False):
         port = randrange(1025, 65535)
 
-        if has_port:
+        if has_port and port != None:
             ip, port = ip.split(':')
             port = int(port)
 
@@ -31,7 +31,7 @@ class IP:
 
     def ip_tuple(self):
         ip, port = str(self).split(':')
-        return ip, port
+        return ip, int(port)
 
 def check_ip(ip):
     ip_match = fullmatch(r'^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d).?\b){4}(\d|[1-9]\d{1,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])?$', ip)
