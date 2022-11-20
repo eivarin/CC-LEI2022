@@ -1,5 +1,7 @@
-import sys
+from sys import argv
 import common.ip as ip
+import common.udp_handler as udp
+import src.dns_packet as dns
 
 def main(argv):
     help = '''
@@ -20,24 +22,29 @@ CNAME
     Specifies an canonic name (or alias) associated to the name given in argument.
 
 PTR
-    Specifies a name of a server/host using the IPv4 used presented as argument.
+    Specifies a name of a server/host using the IPv4 presented as argument.
 '''
     is_ip, has_port = ip.check_ip(argv[1])
-    if len(argv) >= 5 and is_ip:
-        ip = ip.IP(argv[1], has_port)
-        
-        # verificar se isto precisam de ser funções
-        possible_args = set(['R', 'MX', 'NS', 'A', 'PTR', 'CNAME'])
+    
+    # verificar se o IP está correto
+    if len(argv) <= 5 or not is_ip:
+        return print(help)
 
-        for arg in argv[3:]:
-            if not arg not in possible_args:
-                break
+    # verificar argumentos
+    possible_args = set(['R', 'MX', 'NS', 'A', 'PTR', 'CNAME'])
+    if all([x in possible_args for x in argv[3:]]):
+        return print(help)
 
-        # query parsing to send goes here
+    ip = ip.IP(argv[1], has_port)
+    
+    query = dns.dns_packet()        # depois meter os argumentos corretos
 
-    print(help)
+    skt = udp.UDP_Handler()         # qual IP? 😅
+    skt.send(query, ip)             # a redefinir com métodos quando houver dns_queries
+    result = skt.receive().decode('UTF-8')
 
-    # vtable de args
+    # por enquanto
+    print(result)
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main(argv)
