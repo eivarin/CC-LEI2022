@@ -12,7 +12,7 @@ class dns_packet:
         msg = msgID.__str__()
         msg ++ flags.__str__()
         dataFields = responseCode ++ numValues ++ numAuths ++ numExtra
-        if len(self.enconde(dataFields)) > 1000:
+        if len(self.enconde(dataFields)) > 1024:
             print("data is to big")
             return -1
         if responseCode in [1,2,3] and numValues < 255 and numAuths < 255 and numExtra < 255:
