@@ -34,9 +34,9 @@ class dns_packet:
     def encode_flags_and_response(self):
         a, b, c = self.flags
         # queres guardar na classe ou return?
-        return C.c_uint8_t(int(f'{a:01b}{b:01b}{c:01b}{self.responseCode:03b}', 2))
+        return C.c_uint8(int(f'{a:01b}{b:01b}{c:01b}{self.responseCode:03b}', 2))
 
-    def decode_flags_and_response(self, to_decode: C.c_uint8_t):
+    def decode_flags_and_response(self, to_decode: C.c_uint8):
         self.flags = (
         (to_decode & 8) == 8,
         (to_decode & 16) == 16,
