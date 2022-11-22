@@ -1,6 +1,7 @@
 import socket
 import dns_packet
 import parser
+from common import ip
 
 class DB:
 
@@ -22,22 +23,44 @@ class DB:
         '''
         self.__db = {}
         self.domains = {}
-        for domain, _ in configs["SP"]:
+        for domain, server_ip in configs["SP"]:
+
+            is_ip, has_port = ip.check_ip(server_ip)
+            if is_ip:
+                if not has_port:
+                    server_ip+= ":53"
+                server_ip = ip.IP(server_ip, has_port=True)
+
             if domain not in self.domains:
-                self.domains[domain] = False
-        for domain, _ in configs["SS"] + configs["DB"]:
+                self.domains[domain] = (False, server_ip)
+
+
+        for domain, server_ip in configs["SS"] + configs["DB"]:
+            is_ip, has_port = ip.check_ip(server_ip)
+            if is_ip:
+                if not has_port:
+                    server_ip+= ":53"
+                server_ip = ip.IP(server_ip, has_port=True)
             if domain not in self.domains:
-                self.domains[domain] = True
+                self.domains[domain] = (True, server_ip)
         
         for domain, value in configs["DB"]:
             unparsed_db = parser.Parser(value)
-            for k in unparsed_db.keys():
-                l = unparsed_db[k]
-                for b, c, d, e in l:
-                    self.add(k, b, c, d, e)
+            for domain in unparsed_db.keys():
+                types_dict = unparsed_db[domain]
+                for type in types_dict.keys():
+                    v = types_dict[type]
+                    match len(v):
+                        case 1:
+                            self.add(domain, type, v[0])
+                        case 2:
+                            self.add(domain, type, v[0], v[1])
+                        case 3:
+                            self.add(domain, type, v[0], v[1], v[2])
 
 
-    def add(self, parameter, value_type, value, ttl, priority):
+
+    def add(self, parameter, value_type, value, ttl = 0, priority = 1):
         parameters = self.__db[parameter]
         if parameters == None:
             parameters = []
@@ -55,11 +78,20 @@ class DB:
     def add_domain(self, server):
         self.__server_list.add(server)
         
-    def zone_transfer(self, con: socket.socket, domain: str):
-        for type in self.__db[domain]:
-            for entry in self.__db[domain][type]:
-                unparsed_str = self.unparsed_str(domain, type, entry)
-                con.sendall(unparsed_str.encode())
+    def zone_transfer(self, con: socket.socket, domain: str, receiving: bool):
+        if receiving:
+            self.__db = {}
+            while True:
+                entry = con.recv(128).decode()
+                if not entry:
+                    break
+                p = entry.split()
+                self.add(p[0], p[1], p[2], p[3], p[4])
+        else:
+            for type in self.__db[domain]:
+                for entry in self.__db[domain][type]:
+                    unparsed_str = self.unparsed_str(domain, type, entry)
+                    con.sendall(unparsed_str.encode())
         con.close()
     
     def default_entry_repr(self,domain, type, entry):
@@ -71,6 +103,9 @@ class DB:
                 unparsed_str += f" {entry[1]} {entry[2]}"
         return unparsed_str
 
+    def get_domain_SOA(self,domain):
+        x = self.__db[domain]
+        return x["SOAREFRESH"], x["SOAEXPIRE"], x["SOARETRY"], x["SOASERIAL"]
 
     def query(self, packet):
         try:
