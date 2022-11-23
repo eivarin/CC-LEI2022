@@ -57,14 +57,19 @@ class DB:
     def zone_transfer(self, con: socket.socket, domain: str):
         for type in self.__db[domain]:
             for entry in self.__db[domain][type]:
-                unparsed_str = f"{domain} {type} {entry[0]}"
-                match len(entry):
-                    case 2:
-                        unparsed_str += f" {entry[2]}"
-                    case 3:
-                        unparsed_str += f" {entry[2]} {entry[3]}"
+                unparsed_str = self.unparsed_str(domain, type, entry)
                 con.sendall(unparsed_str.encode())
         con.close()
+    
+    def default_entry_repr(self,domain, type, entry):
+        unparsed_str = f"{domain} {type} {entry[0]}"
+        match len(entry):
+            case 2:
+                unparsed_str += f" {entry[1]}"
+            case 3:
+                unparsed_str += f" {entry[1]} {entry[2]}"
+        return unparsed_str
+
 
     def query(self, packet):
         try:
