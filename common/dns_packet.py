@@ -62,6 +62,7 @@ class dns_packet:
         self.num_values = numValues
         self.num_auths = numAuths
         self.num_extra = numExtra
+        self.queryInfo = queryInfo
         if self.queryInfo:
             self.q_info, self.q_type = queryInfo
         self.val_response = responseValues
