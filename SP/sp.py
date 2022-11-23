@@ -1,6 +1,7 @@
 import socket
 import sys
 from pathlib import Path
+import threading
 from time import sleep # if you haven't already done so
 file = Path(__file__).resolve()
 parent, root = file.parent, file.parents[1]
@@ -11,9 +12,13 @@ try:
     sys.path.remove(str(parent))
 except ValueError: # Already removed
     pass
+
 from common import ip 
 from common.parser import Parser, ArgsParser
 from common.logger import Logger
+from common.udp_handler import UDP_Handler
+from common.dns_packet import dns_packet
+from common.database import DB
 
 class SP:
     def __init__(self, argv):
@@ -22,7 +27,8 @@ class SP:
         self.configs = Parser(self.args["config_file"])
         self.logger = Logger(self.configs, self.args["debug"])
         self.logger.log_st("all",self.args)
-        self.db_copy = Parser(self.args["db_file"])
+        db_copy = Parser(self.args["db_file"])
+        self.db = DB(db_copy)
         self.st_list = self.parse_st_file(self.args["st_file"])
         self.ip = ip.IP(socket.gethostbyname(socket.gethostname()), self.args["port"])
 
@@ -40,11 +46,19 @@ class SP:
         while True:
             con, senderIp = tcp_sck.accept()
             domain = con.recv(128).decode()
-            #check if domain exists
-            con.sendall(self.db.entry_len(domain).to_bytes(2, byteorder='big'))
-            resp = con.recv(128).decode()
-            if resp == "ok":
-                self.db.zone_transfer(con, domain)
+            if domain in self.db:
+                con.sendall(self.db.entry_len(domain).to_bytes(2, byteorder='big'))
+                resp = con.recv(128).decode()
+                if resp == "ok":
+                    self.db.zone_transfer(con, domain)
+
+    def udp_waiter(self):
+        h = UDP_Handler(self.ip)
+        while True:
+            bytes, sender = h.receive()
+            packet = dns_packet(encodedbytes = bytes)
+            response = self.db.query(packet)
+            h.send(response.encodePacket(), sender)
 
 
     def parse_st_file(self, st_file):
@@ -63,8 +77,10 @@ class SP:
 
     def run(self):
         i = 0
-        while True:
-            i += 1
+        self.tcp_t = threading.Thread(target = self.tcp_waiter)
+        self.tcp_t.start()
+        self.udp_waiter()
+
 
 if __name__ == "__main__":
     server = SP(sys.argv)
