@@ -39,7 +39,19 @@ class SP:
         d["st_file"] = args[2]
         return d
 
-    def tcp_waiter(self):
+    def wait_time(self, refresh: int, expire: int):
+        min_time = lambda d: ('refresh', 'expire') if d['refresh'] > d['expire'] else ('expire', 'refresh')
+        times = { 'refresh': refresh, 'expire': expire }
+        max, min = min_time(times)
+        sleep(times[min])
+        return times[max] - times[min], min == 'refresh'
+    
+    def zone_transfer_client(self):
+        refresh, expire = self.db
+        while True:
+            wait_time()
+
+    def zone_transfer_server(self):
         tcp_sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp_sck.bind(self.ip.ip_value_tuple())
         tcp_sck.listen()

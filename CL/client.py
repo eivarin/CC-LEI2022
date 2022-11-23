@@ -19,7 +19,7 @@ from common import dns_packet as dns
 
 def main(argv):
     help = '''
-dnscl IP[:port] DOMAIN [MX | A | CNAME | PTR] ?[R]
+dnscl IP[:port] DOMAIN [MX | A | NS | PTR] ?[R]
 
 R
     Recursive query execution. This is off by default.
@@ -33,7 +33,7 @@ A
     This supports priorities.
 
 CNAME
-    Specifies an canonic name (or alias) associated to the name given in argument.
+    Specifies a canonic name (or alias) associated to the name given in argument.
 
 PTR
     Specifies a name of a server/host using the IPv4 presented as argument.
@@ -46,15 +46,9 @@ PTR
 
     # verificar argumentos
     possible_types = set([
-        # 'DEFAULT',
-        # 'SOAADMIN',
-        # 'SOASERIAL',
-        # 'SOAREFRESH',
-        # 'SOARETRY',
-        # 'SOAEXPIRE',
-        # 'NS',
-        # 'PTR',
-        # 'CNAME',
+        'NS',
+        'CNAME',
+        'A',
         'R',
         'MX'
     ])
