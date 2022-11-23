@@ -1,15 +1,18 @@
 from sys import argv
-import common.ip as ip
-import common.udp_handler as udp
-import common.dns_packet as dns
+# isto não pode ficar mais bonito?
+from common import ip
+from common import udp_handler as udp
+from src import dns_packet as dns
 
 def main(argv):
     help = '''
-dnscl IP[:port] DOMAIN [ARGS]
+dnscl IP[:port] DOMAIN TYPE {R}
 
-ARGS can be:
 R
     Recursive query execution. This is off by default.
+    Can be combined with other types.
+
+TYPE can be:
 
 MX
     Specifies an e-mail server for the domain mail indicated.
@@ -27,21 +30,44 @@ PTR
     is_ip, has_port = ip.check_ip(argv[1])
     
     # verificar se o IP está correto
-    if len(argv) <= 5 or not is_ip:
+    if len(argv) in range(3,4) or not is_ip:
         return print(help)
 
     # verificar argumentos
-    possible_args = set(['R', 'MX', 'NS', 'A', 'PTR', 'CNAME'])
-    if all([x in possible_args for x in argv[3:]]):
+    possible_types = set([
+        # 'DEFAULT',
+        'SOAADMIN',
+        'SOASERIAL',
+        'SOAREFRESH',
+        'SOARETRY',
+        'SOAEXPIRE',
+        'R',
+        'MX',
+        'NS',
+        'PTR',
+        'CNAME'
+    ])
+
+    if all([x in possible_types for x in argv[3:]]):
         return print(help)
 
     ip = ip.IP(argv[1], has_port)
-    
-    query = dns.dns_packet()        # depois meter os argumentos corretos
 
-    skt = udp.UDP_Handler()         # qual IP? 😅
-    skt.send(query, ip)             # a redefinir com métodos quando houver dns_queries
-    result = skt.receive().decode('UTF-8')
+    query = dns.dns_packet(
+        flags = (
+            True,
+            argv[4] == 'R',
+            False
+        ),
+        queryInfo = (
+            argv[2],
+            argv[3]
+        )
+    )
+
+    udp_skt = udp.UDP_Handler()
+    udp_skt.send(query, ip)
+    result = udp_skt.receive().decode('UTF-8')
 
     # por enquanto
     print(result)
