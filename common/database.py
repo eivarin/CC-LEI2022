@@ -120,13 +120,14 @@ class DB:
             response = [self.default_entry_reprlt(x) for x in self.__db[packet.q_info][packet.q_type]]
             auths = [self.default_query_repr(x) for x in self.__db[packet.q_info]['NS']]
 
-            # def check_extra(x, db):
-            #     splits = x.split() # 0: domain, 1: type, 2: entry
-            #     return db[splits[0]][splits[1]]
+            def check_extra(x, db):
+                splits = x.split() # 0: domain, 1: type, 2: entry
+                address = splits[2].removesuffix(f'.{splits[0]}')
+                return 'A' in db[address]
 
-            # extra = [x for x in auths if x.split(' ')[1] == 'A']
-            # if packet.q_type != 'A':
-            #     extra += [x for x in response if ]
+            extra = [x for x in auths if x.split(' ')[1] == 'A']
+            if packet.q_type != 'A':
+                extra += [x for x in response if check_extra(x, self.__db)]
 
             num_responses = len(response)
             
