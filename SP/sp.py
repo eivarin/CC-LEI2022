@@ -59,7 +59,7 @@ class SP:
                 h = UDP_Handler(self.ip)
                 h.send(packet.encodePacket(), sp_ip)
                 bytes, sender = h.receive()
-                packet = dns_packet(encodedbytes = bytes)
+                packet = dns_packet(encoded_bytes = bytes)
                 h.close()
                 if packet.val_response > serial:
                     self.zone_transfer_ss_com(sp_ip, domain)
@@ -99,7 +99,7 @@ class SP:
         h = UDP_Handler(self.ip)
         while True:
             bytes, sender = h.receive()
-            packet = dns_packet(encodedbytes = bytes)
+            packet = dns_packet(encoded_bytes = bytes)
             response = self.db.query(packet)
             h.send(response.encodePacket(), sender)
 

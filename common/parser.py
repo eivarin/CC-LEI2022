@@ -1,4 +1,4 @@
-from common import ip
+import ip
 
 class Config():
     def __init__(self, parameter, type, value):
@@ -20,7 +20,7 @@ class Parser():
         lns = f.read().splitlines()
         result = {}
         for l in lns:
-            if l[0] != '#' and l != "\n":
+            if l != "" and l[0] != '#' and l != "\n":
                 values = l.split()
                 if len(values) <= 5:
                     if values[1] not in result:

@@ -1,0 +1,15 @@
+#Ficheiro de Configuração do Servidor Primário Franz
+
+lost. DB database
+
+lost. SS 10.0.0.2:2001
+
+lost. LG lost.log
+
+dias. DB db2
+
+dias. SS 10.0.0.2:2001
+
+dias. LG lost.log
+
+all LG all.log
