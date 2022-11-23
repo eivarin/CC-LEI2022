@@ -19,13 +19,11 @@ from common import dns_packet as dns
 
 def main(argv):
     help = '''
-dnscl IP[:port] DOMAIN TYPE {R}
+dnscl IP[:port] DOMAIN [MX | A | CNAME | PTR] ?[R]
 
 R
     Recursive query execution. This is off by default.
     Can be combined with other types.
-
-TYPE can be:
 
 MX
     Specifies an e-mail server for the domain mail indicated.
@@ -49,16 +47,16 @@ PTR
     # verificar argumentos
     possible_types = set([
         # 'DEFAULT',
-        'SOAADMIN',
-        'SOASERIAL',
-        'SOAREFRESH',
-        'SOARETRY',
-        'SOAEXPIRE',
+        # 'SOAADMIN',
+        # 'SOASERIAL',
+        # 'SOAREFRESH',
+        # 'SOARETRY',
+        # 'SOAEXPIRE',
+        # 'NS',
+        # 'PTR',
+        # 'CNAME',
         'R',
-        'MX',
-        'NS',
-        'PTR',
-        'CNAME'
+        'MX'
     ])
 
     if all([x in possible_types for x in argv[3:]]):

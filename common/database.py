@@ -18,6 +18,7 @@ class DB:
             'PTR'
         ])
         '''
+        self.id = 0
         self.server_type = server_type # 'SS' e 'SP'
         self.__db = {}
         # self.__macros = {}
@@ -49,7 +50,7 @@ class DB:
         count = 0
         for type_value in self.__db[parameter]:
             count += len(type_value)
-        return count
+        return count 
 
     def add_domain(self, server):
         self.__server_list.add(server)
@@ -80,15 +81,24 @@ class DB:
             elif packet.q_type not in self.__db[packet.q_info]:
                 reponse_code = 1
 
-            response = self.__db[packet.q_info][packet.q_type]
-            auths = self.__db[packet.q_info]['NS']
-            # TODO: melhor parse para os A
+
+            response = [self.default_entry_reprlt(x) for x in self.__db[packet.q_info][packet.q_type]]
+            auths = [self.default_query_repr(x) for x in self.__db[packet.q_info]['NS']]
+
+            # def check_extra(x, db):
+            #     splits = x.split() # 0: domain, 1: type, 2: entry
+            #     return db[splits[0]][splits[1]]
+
+            # extra = [x for x in auths if x.split(' ')[1] == 'A']
+            # if packet.q_type != 'A':
+            #     extra += [x for x in response if ]
+
             num_responses = len(response)
             
             # caso do 2
             if num_responses == 0:
                 response_code = 2
-                response = []                        
+                response = []              
 
             return dns_packet.dns_packet(
                 flags = packet.flags,
@@ -98,15 +108,15 @@ class DB:
                 # 3 = mensagem não foi descodificada corretamente
                 responseCode = response_code,
                 # numero de entries com aquele nome e tipo
-                numValues = ,
+                numValues = num_responses,
                 # numero de entries com match no nome, com tipo NS
                 numAuths = len(auths),
                 # numero de IP com match no nome em auths e extra, com tipo A
-                numExtra = ,
+                numExtra = len(extra),
                 queryInfo = packet.queryInfo,
-                responseValues = results,
+                responseValues = response,
                 authValues = auths,
-                extraValues = ,
+                extraValues = extra,
                 msgID = packet.message_id
             )
 

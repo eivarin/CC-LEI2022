@@ -38,12 +38,11 @@ class dns_packet:
 
     def decode_flags_and_response(self, to_decode: C.c_uint8):
         self.flags = (
-        (to_decode & 8) == 8,
-        (to_decode & 16) == 16,
-        (to_decode & 32) == 32
+            (to_decode & 8) == 8,
+            (to_decode & 16) == 16,
+            (to_decode & 32) == 32
         )
-        self.responseCode = to_decode & 7;
-
+        self.responseCode = to_decode & 7
 
     def __init__(self,
                 flags: tuple[bool,bool,bool] = [False,False,False],
