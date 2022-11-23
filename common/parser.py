@@ -1,3 +1,5 @@
+from common import ip
+
 class Config():
     def __init__(self, parameter, type, value):
         self.parameter = str(parameter)
@@ -51,6 +53,13 @@ def ArgsParser(argv, minimum_args: int):
                     d["timeout"] = int(argv[i+1])
                 case "--mode":
                     d["debug"] = argv[i+1] == "debug"
+                case "--ip":
+                    x = argv[i+1]
+                    is_ip, has_port = ip.check_ip(x)
+                    if not has_port:
+                        x += f":{d['port']}"
+                    if is_ip:
+                        d["ip"] = ip.IP(x, has_port=True)
                 case _:
                     l.append(argv[1])
             if isFlag:

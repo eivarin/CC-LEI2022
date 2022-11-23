@@ -30,7 +30,7 @@ class SP:
         db_copy = Parser(self.args["db_file"])
         self.db = DB(db_copy)
         self.st_list = self.parse_st_file(self.args["st_file"])
-        self.ip = ip.IP(socket.gethostbyname(socket.gethostname()), self.args["port"])
+        self.ip = self.args["ip"]
 
     def gen_args(self, args, flags):
         d = flags
