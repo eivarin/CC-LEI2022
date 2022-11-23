@@ -1,6 +1,7 @@
 import socket
 import dns_packet
 import parser
+import ip
 
 class DB:
 
@@ -22,25 +23,76 @@ class DB:
         '''
         self.__db = {}
         self.domains = {}
-        for domain, _ in configs["SP"]:
-            if domain not in self.domains:
-                self.domains[domain] = False
-        for domain, _ in configs["SS"] + configs["DB"]:
-            if domain not in self.domains:
-                self.domains[domain] = True
+        if "SP" in configs.result:
+            for domain, server_ip in configs.result["SP"]:
 
-        for domain, value in configs["DB"]:
-            unparsed_db = parser.Parser(value)
-            for k in unparsed_db.keys():
-                l = unparsed_db[k]
-                for b, c, d, e in l:
-                    self.add(k, b, c, d, e)
+                is_ip, has_port = ip.check_ip(server_ip)
+                if is_ip:
+                    if not has_port:
+                        server_ip+= ":53"
+                    server_ip = ip.IP(server_ip, has_port=True)
+
+                if domain not in self.domains:
+                    self.domains[domain] = (False, server_ip)
+
+        a = []
+        if "SS" in configs.result:
+            a += configs.result["SS"]
+        if "DB" in configs.result:
+            a += configs.result["DB"]
+        if len(a) > 0:
+            for domain, server_ip in configs.result["SS"] + configs.result["DB"]:
+                is_ip, has_port = ip.check_ip(server_ip)
+                if is_ip:
+                    if not has_port:
+                        server_ip+= ":53"
+                    server_ip = ip.IP(server_ip, has_port=True)
+                if domain not in self.domains:
+                    self.domains[domain] = (True, server_ip)
+        
+
+        self.authority_to_domains = {}
+        if "DB" in configs.result:
+            for authority, value in configs.result["DB"]:    
+                unparsed_db = parser.Parser(value)
+                if authority not in self.authority_to_domains:
+                    self.authority_to_domains[authority] = set()
+                for type in unparsed_db.result.keys():
+                    value_list = unparsed_db.result[type]
+                    for t in value_list:
+                        self.authority_to_domains[authority].add(t[0])
+                        match len(t):
+                            case 2:
+                                self.add(authority, t[0], type, t[0])
+                            case 3:
+                                self.add(authority, t[0], type, t[1], t[2])
+                            case 4:
+                                self.add(authority, t[0], type, t[1], t[2], t[3])
+
+    def __str__(self):
+        result = ""
+        for domain in self.__db:
+            result += f"\n{domain}:\n"
+            for type in self.__db[domain]:
+                result += f"    -{type}:\n"
+                for entry in self.__db[domain][type]:
+                    entry_str = self.default_entry_repr(domain, type, entry)
+                    result += f"        --{entry_str};\n"
+        result += f"\n\nself.domains:{str(self.domains)}"
+        result += f"\n\nself.authority_to_domains:{str(self.authority_to_domains)}"
+        return result
 
 
-    def add(self, parameter, value_type, value, ttl, priority):
+
+
+    def add(self, authority, parameter, value_type, value, ttl = 0, priority = 1):
+        if parameter[-1] != ".":
+            parameter+=f".{authority}"
+        if parameter not in self.__db:
+            self.__db[parameter] = {}
         parameters = self.__db[parameter]
-        if parameters == None:
-            parameters = []
+        if value_type not in self.__db[parameter]:
+            self.__db[parameter][value_type] = []
         parameters[value_type].append((value, ttl, priority))
         self.__db[parameter] = parameters # is this really necessary?
 
@@ -51,15 +103,22 @@ class DB:
         for type_value in self.__db[parameter]:
             count += len(type_value)
         return count 
-
-    def add_domain(self, server):
-        self.__server_list.add(server)
         
-    def zone_transfer(self, con: socket.socket, domain: str):
-        for type in self.__db[domain]:
-            for entry in self.__db[domain][type]:
-                unparsed_str = self.unparsed_str(domain, type, entry)
-                con.sendall(unparsed_str.encode())
+    def zone_transfer(self, con: socket.socket, domain: str, receiving: bool):
+        if receiving:
+            for dom in self.authority_to_domains[domain]:
+                del self.__db[dom]
+            while True:
+                entry = con.recv(128).decode()
+                if not entry:
+                    break
+                p = entry.split()
+                self.add(domain, p[0], p[1], p[2], p[3], p[4])
+        else:
+            for type in self.__db[domain]:
+                for entry in self.__db[domain][type]:
+                    unparsed_str = self.unparsed_str(domain, type, entry)
+                    con.sendall(unparsed_str.encode())
         con.close()
     
     def default_entry_repr(self,domain, type, entry):
@@ -71,37 +130,49 @@ class DB:
                 unparsed_str += f" {entry[1]} {entry[2]}"
         return unparsed_str
 
+    def get_domain_SOA(self,domain):
+        x = self.__db[domain]
+        return x["SOAREFRESH"], x["SOAEXPIRE"], x["SOARETRY"], x["SOASERIAL"]
 
     def query(self, packet):
-        try:
+        # try:
             response_code = 0
-            
+            def check_extra(x, db):
+                    splits = x.split() # 0: domain, 1: type, 2: entry
+                    address = splits[2]
+                    if 'A' in db[address]:
+                        result = ""
+                        for entry in self.__db[address]["A"]:
+                            result += f"{self.default_entry_repr(address, 'A', entry)},"
+                        return result[:-1]
+            response = []
+            num_responses = 0
+
             if packet.q_info not in self.__db:
-                reponse_code = 2
-            elif packet.q_type not in self.__db[packet.q_info]:
-                reponse_code = 1
-
-
-            response = [self.default_entry_reprlt(x) for x in self.__db[packet.q_info][packet.q_type]]
-            auths = [self.default_query_repr(x) for x in self.__db[packet.q_info]['NS']]
-
-            # def check_extra(x, db):
-            #     splits = x.split() # 0: domain, 1: type, 2: entry
-            #     return db[splits[0]][splits[1]]
-
-            # extra = [x for x in auths if x.split(' ')[1] == 'A']
-            # if packet.q_type != 'A':
-            #     extra += [x for x in response if ]
-
-            num_responses = len(response)
-            
-            # caso do 2
-            if num_responses == 0:
                 response_code = 2
-                response = []              
+                auths = [self.default_entry_repr(packet.q_info, "NS", x) for x in self.__db[packet.q_info]['NS']]
+                extra = [check_extra(x, self.__db) for x in auths]
+            elif packet.q_type not in self.__db[packet.q_info]:
+                response_code = 1
+                auths = [self.default_entry_repr(packet.q_info, "NS", x) for x in self.__db[packet.q_info]['NS']]
+                extra = [check_extra(x, self.__db) for x in auths]
+            else:
+                response = [self.default_entry_repr(packet.q_info, packet.q_type, x) for x in self.__db[packet.q_info][packet.q_type]]
+                auths = [self.default_entry_repr(packet.q_info, "NS", x) for x in self.__db[packet.q_info]['NS']]
+                extra = [check_extra(x, self.__db) for x in auths]
+                if packet.q_type != 'A':
+                    extra += [check_extra(x, self.__db) for x in response]
+                num_responses = len(response)
+                
+
+            
+
+
+            if packet.q_info in self.domains:
+                flags = (False, self.domains[packet.q_info][0], packet.flags[1])
 
             return dns_packet.dns_packet(
-                flags = packet.flags,
+                flags = flags,
                 # 0 = sucesso, 
                 # 1 = o nome existe, mas não há name e type,
                 # 2 = resposta negativa - retorna autoridades
@@ -120,13 +191,19 @@ class DB:
                 msgID = packet.message_id
             )
 
-        except:
-            return dns_packet.dns_packet(
-                flags = packet.flags,
-                responseCode = 3,
-                queryInfo = packet.queryInfo,
-                msgID = packet.message_id
-            )
+        # except:
+        #     print("bum")
+        #     return dns_packet.dns_packet(
+        #         flags = packet.flags,
+        #         responseCode = 3,
+        #         queryInfo = packet.queryInfo,
+        #         msgID = packet.message_id
+        #     )
 
     # def default(self, parameter_dict):
-        
+
+
+
+# def foo():
+#     config = parser.Parser("config")
+    # return DB(config), dns_packet.dns_packet(flags=(True,False,False), queryInfo=("dias.", "MX"))

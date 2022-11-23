@@ -1,0 +1,28 @@
+# DNS database file for domain .dias.
+ns1 A 10.0.16.14:3000 10
+ns2 A 10.0.13.12:3000 10
+ns3 A 10.0.17.14:3000 10
+
+dias. SOASP ns1.dias. 10
+dias. SOAADMIN dns\.admin.dias. 10
+dias. SOASERIAL 0117102022 10
+dias. SOAREFRESH 10 10
+dias. SOARETRY 1 10
+dias. SOAEXPIRE 600 10
+dias. NS ns1.dias. 10
+dias. NS ns2.dias. 10
+dias. NS ns3.dias. 10
+found.dias. NS sp.found.dias. 10
+dias. MX mx1.dias. 10 10
+dias. MX mx2.dias. 10 20
+
+sp.found.dias A 10.0.16.15:3000 10
+mx1 A 10.0.16.16:3000 10
+mx2 A 10.0.16.17:3000 10
+www A 10.0.16.18:3000 10
+
+sp CNAME ns1 10
+ss1 CNAME ns2 10
+ss2 CNAME ns3 100
+mail1 CNAME mx1 10
+mail2 CNAME mx2 10
