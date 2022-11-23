@@ -16,6 +16,7 @@ except ValueError: # Already removed
 from common import ip
 from common import udp_handler as udp
 from common import dns_packet as dns
+from common import logger
 
 def main(argv):
     help = '''
@@ -38,6 +39,7 @@ CNAME
 PTR
     Specifies a name of a server/host using the IPv4 presented as argument.
 '''
+
     is_ip, has_port = ip.check_ip(argv[1])
     
     # verificar se o IP está correto
@@ -56,7 +58,6 @@ PTR
     if all([x in possible_types for x in argv[3:]]):
         return print(help)
 
-    ip = ip.IP(argv[1], has_port)
 
     query = dns.dns_packet(
         flags = (
@@ -69,13 +70,18 @@ PTR
             argv[3]
         )
     )
+    log_maker = logger.Logger({}, True)
 
     udp_skt = udp.UDP_Handler()
     udp_skt.send(query, ip)
-    result = udp_skt.receive().decode('UTF-8')
+    result = udp_skt.receive()
 
-    # por enquanto
-    print(result)
+    this_ip = ip.IP(argv[1], has_port)
+    this_ip, port = this_ip.ip_tuple()
+    result = dns.dns_packet(encoded_bytes = result)
+
+    log_maker.log_rr(argv[2], this_ip, result, port)
+
 
 if __name__ == "__main__":
     main(argv)

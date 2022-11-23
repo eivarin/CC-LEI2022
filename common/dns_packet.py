@@ -54,41 +54,45 @@ class dns_packet:
                 responseValues = [],
                 authValues = [],
                 extraValues = [],
-                msgID = random.randint(1,65535)):
-        self.message_id=msgID
-        self.flags = flags
-        self.responseCode=responseCode
-        self.num_values = numValues
-        self.num_auths = numAuths
-        self.num_extra = numExtra
-        self.queryInfo = queryInfo
-        if self.queryInfo:
-            self.q_info, self.q_type = queryInfo
-        self.val_response = responseValues
-        self.val_authority = authValues
-        self.val_extra = extraValues
-        inter_list = [
-            self.q_info,
-            self.q_type,
-            self.gen_str_of_strs(self.val_response,self.joiner_inner),
-            self.gen_str_of_strs(self.val_authority, self.joiner_inner),
-            self.gen_str_of_strs(self.val_extra,self.joiner_inner)
-        ]
-        self.dataFields = self.gen_str_of_strs(inter_list, self.joiner_outer)
-        self.encode()
-        # dataFields = responseCode ++ numValues ++ numAuths ++ numExtra
-        # if len(self.enconde(dataFields)) > 1024:
-        #     print("data is to big")
-        #     return -1
-        # if responseCode in [1,2,3] and numValues < 255 and numAuths < 255 and numExtra < 255:
-        #     msg ++ responseCode ++ numValues ++ numAuths ++ numExtra
-        # else:
-        #     print("values are out of scope")
-        #     return -1
-        # if queryInfo is not None:
-        #     msg ++ queryInfo
-        # msg ++ responseValues ++ authValues ++ extraValues
-        # self.msgDNS = msg
+                msgID = random.randint(1,65535),
+                encoded_bytes = []):
+        if encoded_bytes != []:
+            self.decodePacket(encoded_bytes)
+        else:
+            self.message_id=msgID
+            self.flags = flags
+            self.responseCode=responseCode
+            self.num_values = numValues
+            self.num_auths = numAuths
+            self.num_extra = numExtra
+            self.queryInfo = queryInfo
+            if self.queryInfo:
+                self.q_info, self.q_type = queryInfo
+            self.val_response = responseValues
+            self.val_authority = authValues
+            self.val_extra = extraValues
+            inter_list = [
+                self.q_info,
+                self.q_type,
+                self.gen_str_of_strs(self.val_response,self.joiner_inner),
+                self.gen_str_of_strs(self.val_authority, self.joiner_inner),
+                self.gen_str_of_strs(self.val_extra,self.joiner_inner)
+            ]
+            self.dataFields = self.gen_str_of_strs(inter_list, self.joiner_outer)
+            self.encode()
+            # dataFields = responseCode ++ numValues ++ numAuths ++ numExtra
+            # if len(self.enconde(dataFields)) > 1024:
+            #     print("data is to big")
+            #     return -1
+            # if responseCode in [1,2,3] and numValues < 255 and numAuths < 255 and numExtra < 255:
+            #     msg ++ responseCode ++ numValues ++ numAuths ++ numExtra
+            # else:
+            #     print("values are out of scope")
+            #     return -1
+            # if queryInfo is not None:
+            #     msg ++ queryInfo
+            # msg ++ responseValues ++ authValues ++ extraValues
+            # self.msgDNS = msg
         
     def gen_str_of_strs(self, list, joiner):
         s = joiner.join(list)
