@@ -26,12 +26,15 @@ class DB:
             for b, c, d, e in l:
                 self.add(k, b, c, d, e)
 
-        self.__server_list = set()
-        
-        self.__auths = set()
-        for i in configs:
-            if i is 'server':
-                self.__auths.add(i)
+        self.domains = {}
+        for domain, _ in configs["SP"]:
+            if domain not in self.domains:
+                self.domains[domain] = False
+        for domain, _ in configs["SS"] + configs["DB"]:
+            if domain not in self.domains:
+                self.domains[domain] = True
+
+
 
     def add(self, parameter, value_type, value, ttl, priority):
         parameters = self.__db[parameter]
