@@ -44,6 +44,7 @@ class dns_packet:
         )
         self.responseCode = to_decode & 7;
 
+
     def __init__(self,
                 flags: tuple[bool,bool,bool] = [False,False,False],
                 responseCode = 0,
