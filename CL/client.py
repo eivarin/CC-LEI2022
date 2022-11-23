@@ -1,5 +1,5 @@
 import sys
-import common.ip as ip
+import Common.ip as ip
 
 def main(argv):
     help = '''
