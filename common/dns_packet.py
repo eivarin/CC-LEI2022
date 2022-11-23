@@ -44,7 +44,18 @@ class dns_packet:
         )
         self.responseCode = to_decode & 7;
 
-    def __init__(self,flags: Tuple[bool,bool,bool],responseCode,numValues,numAuths,numExtra,queryInfo: Tuple[str,str],responseValues,authValues,extraValues,msgID = random.randint(1,65535)):
+
+    def __init__(self,
+                flags: tuple[bool,bool,bool] = [False,False,False],
+                responseCode = 0,
+                numValues = 0,
+                numAuths = 0,
+                numExtra = 0,
+                queryInfo: tuple[str,str] = ("",""),
+                responseValues = [],
+                authValues = [],
+                extraValues = [],
+                msgID = random.randint(1,65535)):
         self.message_id=msgID
         self.flags = flags
         self.responseCode=responseCode
