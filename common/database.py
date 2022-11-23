@@ -1,7 +1,7 @@
 import dns_packet
 
 class DB:
-    def __init__(self, parameter_dict):
+    def __init__(self, parameter_dict, configs, server_type = 'SS'):
         '''
         self.__args = set([
             # 'DEFAULT',
@@ -17,6 +17,7 @@ class DB:
             'PTR'
         ])
         '''
+        self.server_type = server_type # 'SS' e 'SP'
         self.__db = {}
         # self.__macros = {}
         for k in parameter_dict.keys():
@@ -25,6 +26,11 @@ class DB:
                 self.add(k, b, c, d, e)
 
         self.__server_list = set()
+        
+        self.__auths = set()
+        for i in configs:
+            if i is 'server':
+                self.__auths.add(i)
 
     def add(self, parameter, value_type, value, ttl, priority):
         parameters = self.__db[parameter]
