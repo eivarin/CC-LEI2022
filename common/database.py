@@ -1,8 +1,10 @@
 import socket
 import dns_packet
+import parser
 
 class DB:
-    def __init__(self, parameter_dict, configs, server_type = 'SS'):
+
+    def __init__(self, configs):
         '''
         self.__args = set([
             # 'DEFAULT',
@@ -18,15 +20,7 @@ class DB:
             'PTR'
         ])
         '''
-        self.id = 0
-        self.server_type = server_type # 'SS' e 'SP'
         self.__db = {}
-        # self.__macros = {}
-        for k in parameter_dict.keys():
-            l = parameter_dict[k]
-            for b, c, d, e in l:
-                self.add(k, b, c, d, e)
-
         self.domains = {}
         for domain, _ in configs["SP"]:
             if domain not in self.domains:
@@ -34,7 +28,13 @@ class DB:
         for domain, _ in configs["SS"] + configs["DB"]:
             if domain not in self.domains:
                 self.domains[domain] = True
-
+        
+        for domain, value in configs["DB"]:
+            unparsed_db = parser.Parser(value)
+            for k in unparsed_db.keys():
+                l = unparsed_db[k]
+                for b, c, d, e in l:
+                    self.add(k, b, c, d, e)
 
 
     def add(self, parameter, value_type, value, ttl, priority):
