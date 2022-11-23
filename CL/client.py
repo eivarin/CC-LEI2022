@@ -1,8 +1,21 @@
-from sys import argv
+import socket
+from sys import argv, path
+from pathlib import Path
+from time import sleep # if you haven't already done so
+file = Path(__file__).resolve()
+parent, root = file.parent, file.parents[1]
+path.append(str(root))
+
+# Additionally remove the current file's directory from sys.path
+try:
+    path.remove(str(parent))
+except ValueError: # Already removed
+    pass
+
 # isto não pode ficar mais bonito?
 from common import ip
 from common import udp_handler as udp
-from src import dns_packet as dns
+from common import dns_packet as dns
 
 def main(argv):
     help = '''
