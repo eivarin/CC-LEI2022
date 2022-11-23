@@ -1,7 +1,7 @@
 from sys import argv
 import common.ip as ip
 import common.udp_handler as udp
-import src.dns_packet as dns
+import common.dns_packet as dns
 
 def main(argv):
     help = '''
