@@ -28,7 +28,7 @@ class DB:
         for domain, _ in configs["SS"] + configs["DB"]:
             if domain not in self.domains:
                 self.domains[domain] = True
-        
+
         for domain, value in configs["DB"]:
             unparsed_db = parser.Parser(value)
             for k in unparsed_db.keys():
