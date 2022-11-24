@@ -1,6 +1,6 @@
 import socket
 from ip import IP
-
+#DEPRECATED
 class TCP_Handler:
     def __init__(self, ip: IP = IP("127.0.0.1:25565", True)):
         self.open_connections = {}

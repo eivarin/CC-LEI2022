@@ -6,8 +6,7 @@ from random import randrange
 #             IP { a :: Word8, b :: Word8, c :: Word8, d :: Word8 }
 
 class IP:
-    def __init__(self, ip: str, port = None, has_port = False):
-        port = randrange(1025, 65535)
+    def __init__(self, ip: str, port = 53, has_port = False):
 
         if has_port and port != None:
             ip, port = ip.split(':')

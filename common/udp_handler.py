@@ -17,3 +17,5 @@ class UDP_Handler:
     def send(self, message, destiny: IP):
         self.socket.sendto(message, destiny.ip_value_tuple())
 
+    def close(self):
+        self.socket.close()

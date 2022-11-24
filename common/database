@@ -1,0 +1,30 @@
+
+
+# DNS database file for domain .lost.
+ns1 A 10.0.16.14:3000 10
+ns2 A 10.0.13.12:3000 10
+ns3 A 10.0.17.14:3000 10
+
+lost. SOASP ns1.lost. 10
+lost. SOAADMIN dns\.admin.lost. 10
+lost. SOASERIAL 0117102022 10
+lost. SOAREFRESH 10 10
+lost. SOARETRY 1 10
+lost. SOAEXPIRE 600 10
+lost. NS ns1.lost. 10
+lost. NS ns2.lost. 10
+lost. NS ns3.lost. 10
+found.lost. NS sp.found.lost. 10
+lost. MX mx1.lost. 10 10
+lost. MX mx2.lost. 10 20
+
+sp.found.lost A 10.0.16.15:3000 10
+mx1 A 10.0.16.16:3000 10
+mx2 A 10.0.16.17:3000 10
+www A 10.0.16.18:3000 10
+
+sp CNAME ns1 10
+ss1 CNAME ns2 10
+ss2 CNAME ns3 100
+mail1 CNAME mx1 10
+mail2 CNAME mx2 10
