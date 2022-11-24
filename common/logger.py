@@ -7,18 +7,22 @@ class Logger:
     def __init__(self, configs: Parser, is_debug: bool) -> None:
         self.allLogs = []
         self.domain_log_files = {}
-        for domain, value in configs.result["LG"]:
-            if not domain in self.domain_log_files:    
-                self.domain_log_files[domain] = []
-            self.domain_log_files[domain].append(value)
+        if configs != None:
+            for domain, value in configs.result["LG"]:
+                if not domain in self.domain_log_files:    
+                    self.domain_log_files[domain] = []
+                self.domain_log_files[domain].append(value)
         if is_debug:
+            domain = "all"
+            if not domain in self.domain_log_files:    
+                    self.domain_log_files[domain] = []
             self.domain_log_files["all"].append("debug")
     
     def write_log(self, domain, type, ip, entry_data, port = None):
         now = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         parsed_ip = f"{ip}" if port == None else f"{ip}:{port}"
         nline = f"{now} {type} {parsed_ip} {entry_data}\n"
-        if domain != "all":
+        if domain != "all" and domain in self.domain_log_files:
             for fname in self.domain_log_files[domain]:
                 self.__write_log_aux(fname,nline)
         

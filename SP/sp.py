@@ -28,14 +28,14 @@ class SP:
         self.logger = Logger(self.configs, self.args["debug"])
         self.logger.log_st("all",self.args)
         self.db = DB(self.configs)
-        self.st_list = self.parse_st_file(self.configs["ST"])
+        if "ST" in self.configs.result:
+            self.st_list = self.parse_st_file(self.configs.result["ST"])
         self.ip = self.args["ip"]
+        self.thrds = []
 
     def gen_args(self, args, flags):
         d = flags
         d["config_file"] = args[0]
-        d["db_file"] = args[1]
-        d["st_file"] = args[2]
         return d
 
     def wait_time(self, refresh: int, expire: int):
@@ -45,37 +45,58 @@ class SP:
         sleep(times[min])
         return times[max] - times[min], min == 'refresh'
     
-    def zone_transfer_ss_checker(self, domain):
-        sp_ip = ip.IP()
-        if domain in self.sp_domains:
-            sp_ip = self.sp_domains[domain]
+    def zone_transfer_ss_checker(self, domain, lock):
+        sp_ip = None
+        if domain in self.ss_domains:
+            sp_ip = self.ss_domains[domain]
         
-        refresh, expire, retry, serial = self.db.get_domain_SOA(domain)
+        refresh, expire, retry, serial = self.aux(domain)
         while True:
             other_time, needs_refresh =  self.wait_time(refresh,expire)
             if needs_refresh:
+                print("refreshing")
+                has_response=False
                 expire = other_time
-                packet = dns_packet(queryInfo= (domain,"SOAREFRESH"), flags=(True,False,False))
-                h = UDP_Handler(self.ip)
+                packet = dns_packet(queryInfo= (domain,"SOASERIAL"), flags=(True,False,False))
+                ip_zt,_ = self.ip.ip_tuple()
+                lock.acquire()
+                h = UDP_Handler(ip.IP(ip_zt, 1234))
+                self.thrds.append(h)
+                h.socket.settimeout(5)
                 h.send(packet.encodePacket(), sp_ip)
-                bytes, sender = h.receive()
-                packet = dns_packet(encoded_bytes = bytes)
-                h.close()
-                if packet.val_response > serial:
+                try:
+                    bytes, sender = h.receive()
+                    packet = dns_packet(encoded_bytes = bytes)
+                    has_response = True
+                except socket.timeout:
+                    refresh = retry
+                finally:
+                    h.close()
+                    lock.release()
+                if has_response and int(packet.val_response[0].split()[2]) > serial:
                     self.zone_transfer_ss_com(sp_ip, domain)
-                    refresh, expire, retry, serial = self.db.get_domain_SOA(domain)
+                    refresh, expire, retry, serial = self.aux(domain)
             else:
                 self.zone_transfer_ss_com(sp_ip, domain)
-                refresh, expire, retry, serial = self.db.get_domain_SOA(domain)
+                refresh, expire, retry, serial = self.aux(domain)
+
+    def aux(self,domain):
+        d = self.db.get_domain_SOA(domain)
+        result = []
+        for k in d:
+            result.append(int(k[0][0]))
+        return result
 
     def zone_transfer_ss_com(self, sp_ip: ip.IP, domain):
         tcp_sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp_sck.bind(self.ip.ip_value_tuple())
+        self.thrds.append(tcp_sck)
+        tcp_sck.bind(self.ip.ip_tuple())
         tcp_sck.connect(sp_ip.ip_tuple())
         #send domain
         tcp_sck.sendall(domain.encode())
         #receive number of entries
         entries  = int.from_bytes(tcp_sck.recv(128), byteorder='big')
+        print(entries)
         #send ok message
         tcp_sck.sendall("ok".encode())
         #receive zone transfer
@@ -84,24 +105,32 @@ class SP:
 
     def zone_transfer_sp(self):
         tcp_sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp_sck.bind(self.ip.ip_value_tuple())
+        tcp_sck.bind(self.ip.ip_tuple())
         tcp_sck.listen()
+        self.thrds.append(tcp_sck)
         while True:
             con, senderIp = tcp_sck.accept()
+            self.thrds.append(con)
             domain = con.recv(128).decode()
-            if domain in self.db:
-                con.sendall(self.db.entry_len(domain).to_bytes(2, byteorder='big'))
+            print(domain)
+            if domain in self.db.domains and self.db.domains[domain][0]:
+                con.sendall(len(self.db.authority_to_domains[domain]).to_bytes(2, byteorder='big'))
                 resp = con.recv(128).decode()
+                print(resp)
                 if resp == "ok":
+                    print("transfering")
                     self.db.zone_transfer(con, domain, False)
 
     def udp_waiter(self):
+        print(str(self.ip))
         h = UDP_Handler(self.ip)
+        self.thrds.append(h)
         while True:
             bytes, sender = h.receive()
             packet = dns_packet(encoded_bytes = bytes)
+            print(str(packet))
             response = self.db.query(packet)
-            h.send(response.encodePacket(), sender)
+            h.send(response.encodePacket(), ip.IP(sender[0], sender[1]))
 
 
     def parse_st_file(self, st_file):
@@ -116,6 +145,8 @@ class SP:
 
     def stop(self, reason):
         self.logger.log_sp("all", reason)
+        for s in self.thrds:
+            s.close()
         exit()
 
     def run(self):
@@ -129,15 +160,19 @@ class SP:
                 self.ss_domains[domain] = server_ip
 
         self.zone_transfer_threads = []
+        print(self.ss_domains)
+        zone_transfer_lock = threading.Lock()
         for domain in self.ss_domains:
+            print(f"\n{domain}\n")
             self.zone_transfer_ss_com(self.ss_domains[domain], domain)
-            t = threading.Thread(target = self.zone_transfer_ss_checker, args=(domain))
+            t = threading.Thread(target = self.zone_transfer_ss_checker, args=(domain,zone_transfer_lock))
             t.start()
             self.zone_transfer_threads.append(t)
         if len(self.sp_domains) > 0:
-            self.tcp_t = threading.Thread(target = self.tcp_waiter)
-        self.tcp_t.start()
+            self.tcp_t = threading.Thread(target = self.zone_transfer_sp)
+            self.tcp_t.start()
         self.udp_waiter()
+        print("adeus")
 
 
 if __name__ == "__main__":

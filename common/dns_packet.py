@@ -27,9 +27,10 @@ class dns_packet:
         unpacked_data_fields = datafields.split(self.joiner_outer)
         self.q_info = unpacked_data_fields[0]
         self.q_type = unpacked_data_fields[1]
-        self.val_response = filter(lambda s: s!="", unpacked_data_fields[2].split(self.joiner_inner))
-        self.val_authority = filter(lambda s: s!="", unpacked_data_fields[3].split(self.joiner_inner))
-        self.val_extra = filter(lambda s: s!="", unpacked_data_fields[4].split(self.joiner_inner))
+        self.queryInfo = (self.q_info, self.q_type)
+        self.val_response =  list(filter(lambda s: s!="", unpacked_data_fields[2].split(self.joiner_inner)))
+        self.val_authority = list(filter(lambda s: s!="", unpacked_data_fields[3].split(self.joiner_inner)))
+        self.val_extra =     list(filter(lambda s: s!="", unpacked_data_fields[4].split(self.joiner_inner)))
 
 
     def encode_flags_and_response(self):

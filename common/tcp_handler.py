@@ -10,7 +10,7 @@ class TCP_Handler:
 
     def gen_socket(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind(self.ip.ip_value_tuple())
+        self.socket.bind(self.ip.ip_tuple())
         self.socket.listen()
 
     def wait_for_con(self):
@@ -30,7 +30,7 @@ class TCP_Handler:
         return bytes
     
     def connect(self, destiny: IP):
-        self.socket.connect(destiny.ip_value_tuple())    
+        self.socket.connect(destiny.ip_tuple())    
     
     #very threadable function
     def send(self, message, destiny: IP = None):

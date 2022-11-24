@@ -39,12 +39,12 @@ CNAME
 PTR
     Specifies a name of a server/host using the IPv4 presented as argument.
 '''
-
     is_ip, has_port = ip.check_ip(argv[1])
-    
+    destiny_ip = argv[1]
     # verificar se o IP está correto
-    if len(argv) in range(3,4) or not is_ip:
+    if len(argv) not in range(4, 5) or not is_ip:
         return print(help)
+    
 
     # verificar argumentos
     possible_types = set([
@@ -54,15 +54,14 @@ PTR
         'R',
         'MX'
     ])
-
-    if all([x in possible_types for x in argv[3:]]):
+ 
+    if any([x not in possible_types for x in argv[3:]]):
         return print(help)
-
 
     query = dns.dns_packet(
         flags = (
             True,
-            argv[4] == 'R',
+            len(argv) == 5,
             False
         ),
         queryInfo = (
@@ -70,11 +69,16 @@ PTR
             argv[3]
         )
     )
-    log_maker = logger.Logger({}, True)
+    log_maker = logger.Logger(None, True)
 
+    if is_ip:
+        if not has_port:
+            destiny_ip += ":53"
+        
+        
     udp_skt = udp.UDP_Handler()
-    udp_skt.send(query, ip)
-    result = udp_skt.receive()
+    udp_skt.send(query.encodePacket(), ip.IP(destiny_ip, has_port= True))
+    result, sender = udp_skt.receive()
 
     this_ip = ip.IP(argv[1], has_port)
     this_ip, port = this_ip.ip_tuple()

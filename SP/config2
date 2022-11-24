@@ -1,0 +1,11 @@
+#Ficheiro de Configuração do Servidor Primário Franz
+
+lost. SP 10.0.0.1:53
+
+lost. LG lost.log
+
+dias. SP 10.0.0.1:53
+
+dias. LG lost.log
+
+all LG all.log

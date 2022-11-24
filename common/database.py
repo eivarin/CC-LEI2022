@@ -1,7 +1,7 @@
 import socket
-import dns_packet
-import parser
-import ip
+from common import dns_packet
+from common import parser
+from common import ip
 
 class DB:
 
@@ -86,8 +86,7 @@ class DB:
 
 
     def add(self, authority, parameter, value_type, value, ttl = 0, priority = 1):
-        if parameter[-1] != ".":
-            parameter+=f".{authority}"
+        parameter = self.gen_complete_domain(authority, parameter)
         if parameter not in self.__db:
             self.__db[parameter] = {}
         parameters = self.__db[parameter]
@@ -96,7 +95,10 @@ class DB:
         parameters[value_type].append((value, ttl, priority))
         self.__db[parameter] = parameters # is this really necessary?
 
-        
+    def gen_complete_domain(self, authority, domain):
+        if domain[-1] != ".":
+            domain+=f".{authority}"
+        return domain       
 
     def count_entries_for_domain(self, parameter: str):
         count = 0
@@ -106,19 +108,28 @@ class DB:
         
     def zone_transfer(self, con: socket.socket, domain: str, receiving: bool):
         if receiving:
-            for dom in self.authority_to_domains[domain]:
-                del self.__db[dom]
+            if domain in self.authority_to_domains:
+                for dom in self.authority_to_domains[domain]:
+                    del self.__db[dom]
             while True:
-                entry = con.recv(128).decode()
+                size = int.from_bytes(con.recv(2), byteorder='big')
+                entry = con.recv(size).decode()
                 if not entry:
                     break
+                print(entry + "\n")
                 p = entry.split()
                 self.add(domain, p[0], p[1], p[2], p[3], p[4])
+            print(self.__db)
         else:
-            for type in self.__db[domain]:
-                for entry in self.__db[domain][type]:
-                    unparsed_str = self.unparsed_str(domain, type, entry)
-                    con.sendall(unparsed_str.encode())
+            print(self.authority_to_domains[domain])
+            for d in [self.gen_complete_domain(domain, d) for d in self.authority_to_domains[domain]]:
+                for type in self.__db[d]:
+                    for entry in self.__db[d][type]:
+                        unparsed_str = self.default_entry_repr(d, type, entry)
+                        print(unparsed_str + "\n")
+                        con.sendall(len(unparsed_str).to_bytes(2, byteorder='big'))
+                        con.sendall(unparsed_str.encode())
+            print(self.__db)
         con.close()
     
     def default_entry_repr(self,domain, type, entry):
@@ -137,6 +148,7 @@ class DB:
     def query(self, packet):
         # try:
             response_code = 0
+
             def check_extra(x, db):
                     splits = x.split() # 0: domain, 1: type, 2: entry
                     address = splits[2]
@@ -145,6 +157,7 @@ class DB:
                         for entry in self.__db[address]["A"]:
                             result += f"{self.default_entry_repr(address, 'A', entry)},"
                         return result[:-1]
+
             response = []
             num_responses = 0
 
@@ -160,7 +173,7 @@ class DB:
                 response = [self.default_entry_repr(packet.q_info, packet.q_type, x) for x in self.__db[packet.q_info][packet.q_type]]
                 auths = [self.default_entry_repr(packet.q_info, "NS", x) for x in self.__db[packet.q_info]['NS']]
                 extra = [check_extra(x, self.__db) for x in auths]
-                if packet.q_type != 'A':
+                if packet.q_type not in ['A', "DEFAULT", "SOASP", "SOAADMIN", "SOASERIAL", "SOAREFRESH", "SOARETRY", "SOAEXPIRE"]:
                     extra += [check_extra(x, self.__db) for x in response]
                 num_responses = len(response)
                 

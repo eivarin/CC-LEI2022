@@ -2,13 +2,13 @@
 
 lost. DB database
 
-lost. SS 10.0.0.2:2001
+lost. SS 10.0.0.2:53
 
 lost. LG lost.log
 
 dias. DB db2
 
-dias. SS 10.0.0.2:2001
+dias. SS 10.0.0.2:53
 
 dias. LG lost.log
 

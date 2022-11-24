@@ -1,4 +1,4 @@
-import ip
+from common import ip
 
 class Config():
     def __init__(self, parameter, type, value):
