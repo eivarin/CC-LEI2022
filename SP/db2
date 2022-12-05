@@ -16,7 +16,7 @@ found.dias. NS sp.found.dias. 10
 dias. MX mx1.dias. 10 10
 dias. MX mx2.dias. 10 20
 
-sp.found.dias A 10.0.16.15:3000 10
+sp.found.dias. A 10.0.16.15:3000 10
 mx1 A 10.0.16.16:3000 10
 mx2 A 10.0.16.17:3000 10
 www A 10.0.16.18:3000 10

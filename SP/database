@@ -7,7 +7,7 @@ ns3 A 10.0.17.14:3000 10
 
 lost. SOASP ns1.lost. 10
 lost. SOAADMIN dns\.admin.lost. 10
-lost. SOASERIAL 0117102090 10
+lost. SOASERIAL 0177102090 10
 lost. SOAREFRESH 5 10
 lost. SOARETRY 1 10
 lost. SOAEXPIRE 600 10

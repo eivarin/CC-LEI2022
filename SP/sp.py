@@ -57,6 +57,7 @@ class SP:
                 print("refreshing")
                 has_response=False
                 expire = other_time
+                print(f"d:{domain} r:{refresh} e:{expire}")
                 packet = dns_packet(queryInfo= (domain,"SOASERIAL"), flags=(True,False,False))
                 ip_zt,_ = self.ip.ip_tuple()
                 lock.acquire()
@@ -68,13 +69,16 @@ class SP:
                     bytes, sender = h.receive()
                     packet = dns_packet(encoded_bytes = bytes)
                     has_response = True
+                    refresh, _, _, _ = self.aux(domain)
                 except socket.timeout:
                     refresh = retry
                 finally:
                     h.close()
                     lock.release()
                 if has_response and int(packet.val_response[0].split()[2]) > serial:
+                    print(f"{int(packet.val_response[0].split()[2])} > {serial}")
                     self.zone_transfer_ss_com(sp_ip, domain)
+                    print(f"{domain} {self.aux(domain)}")
                     refresh, expire, retry, serial = self.aux(domain)
             else:
                 self.zone_transfer_ss_com(sp_ip, domain)
@@ -105,6 +109,7 @@ class SP:
 
     def zone_transfer_sp(self):
         tcp_sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         tcp_sck.bind(self.ip.ip_tuple())
         tcp_sck.listen()
         self.thrds.append(tcp_sck)
@@ -177,11 +182,11 @@ class SP:
 
 if __name__ == "__main__":
     server = SP(sys.argv)
-    try:
-        server.run()
-    except Exception as e:
-        server.stop(str(e))
-    except KeyboardInterrupt:
-        server.stop("Interrupted by user")
-    finally:
-        exit()
+    #try:
+    server.run()
+    #except Exception as e:
+    #    server.stop(str(e))
+    #except KeyboardInterrupt:
+    #    server.stop("Interrupted by user")
+    #finally:
+    #    exit()

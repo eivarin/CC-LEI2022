@@ -1,0 +1,1 @@
+python3.10 sp.py config --ip 10.0.0.1

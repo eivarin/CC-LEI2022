@@ -68,6 +68,11 @@ class DB:
                                 self.add(authority, t[0], type, t[1], t[2])
                             case 4:
                                 self.add(authority, t[0], type, t[1], t[2], t[3])
+        if "SP" in configs.result:
+            for authority, value in configs.result["SP"]:
+                if authority not in self.authority_to_domains:
+                    self.authority_to_domains[authority] = set()
+
 
     def __str__(self):
         result = ""
@@ -108,8 +113,12 @@ class DB:
         
     def zone_transfer(self, con: socket.socket, domain: str, receiving: bool):
         if receiving:
+            print(self.authority_to_domains)
             if domain in self.authority_to_domains:
+                print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                print(self.authority_to_domains[domain])
                 for dom in self.authority_to_domains[domain]:
+                    print(dom)
                     del self.__db[dom]
             while True:
                 size = int.from_bytes(con.recv(2), byteorder='big')
@@ -118,6 +127,7 @@ class DB:
                     break
                 print(entry + "\n")
                 p = entry.split()
+                self.authority_to_domains[domain].add(p[0])
                 self.add(domain, p[0], p[1], p[2], p[3], p[4])
             print(self.__db)
         else:
