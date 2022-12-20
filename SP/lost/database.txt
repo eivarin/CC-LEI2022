@@ -1,0 +1,31 @@
+
+
+# DNS database file for domain .lost.
+@ DEFAULT lost.
+TTL DEFAULT 86400
+@ SOASP ns1.lost. TTL
+@ SOAADMIN dns\.admin.lost.com. TTL
+@ SOASERIAL 0117102022 TTL
+@ SOAREFRESH 14400 TTL
+@ SOARETRY 3600 TTL
+@ SOAEXPIRE 604800 TTL
+@ NS ns1.lost. TTL
+@ NS ns2.lost. TTL
+@ NS ns3.lost. TTL
+found. @ NS sp.found.lost. TTL
+@ MX mx1.lost. TTL 10
+@ MX mx2.lost. TTL 20
+ns1 A 10.0.0.19 TTL
+ns2 A 10.0.0.22 TTL
+ns3 A 10.0.0.28 TTL
+sp.found A 10.0.0.25 TTL
+mx1 A 193.136.130.200 TTL
+mx2 A 193.136.130.201 TTL
+www A 193.136.130.80 TTL 200
+www A 193.136.130.81 TTL 200
+ftp A 193.136.130.20 TTL
+sp CNAME ns1 TTL
+ss1 CNAME ns2 TTL
+ss2 CNAME ns3 TTL
+mail1 CNAME mx1 TTL
+mail2 CNAME mx2 TTL 

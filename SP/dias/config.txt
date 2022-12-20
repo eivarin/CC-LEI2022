@@ -1,0 +1,15 @@
+#Ficheiro de Configuração do Servidor Primário do Dominio Lost
+
+dias DB /dias/database.db
+
+dias SS 193.137.100.250
+
+dias SS 193.136.130.251:5353
+
+dias DD 127.0.0.1
+
+dias LG /dias/log.txt
+
+all LG /var/dns/all.log
+
+root ST /dias/listaSTteste.txt

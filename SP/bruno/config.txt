@@ -1,0 +1,13 @@
+#Ficheiro de Configuração do Servidor Primário do Dominio bruno
+
+lost. DB database.db
+
+lost. SS 10.0.0.15:53
+lost. SS 10.0.0.30:53
+
+lost. LG bruno.log
+lost. DD 10.0.0.27
+
+all LG all.log
+root ST listaST.txt
+
