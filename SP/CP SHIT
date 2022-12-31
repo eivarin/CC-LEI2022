@@ -1,0 +1,82 @@
+<pi2,pi1> . k = id
+(9)
+<pi2.k, pi1.k> = id
+(6)
+pi1 . id = pi2 . k
+pi2 . id = pi1 . k
+(1)
+pi1 = pi2 . k
+pi2 = pi1 . k
+<=>
+pi2 = pi1 . k
+pi1 = pi2 . k
+(6)
+k=<pi2,pi1>
+--------------------
+assocl . assocr = id
+<=>
+<id x pi1, pi2 . pi2> . assocr = id
+(9)
+<id x pi1 . assocr, pi2 . pi2 . assocr> = id
+(6)
+pi1 . id = id x pi1 . assocr 
+pi2 . id = pi2 . pi2 . assocr
+(1, 10)
+pi1 = <id . pi1, pi1 . pi2> . assocr 
+pi2 = (pi2 . pi2) . assocr
+(1)
+pi1 = <pi1, pi1 . pi2> . assocr 
+pi2 = (pi2 . pi2) . assocr
+(9)
+pi1 = <pi1 . assocr, pi1 . pi2 . assocr> 
+pi2 = (pi2 . pi2) . assocr
+(6)
+pi1 . pi1 = pi1 . assocr
+pi2 . pi1 = pi1 . pi2 . assocr
+pi2 = (pi2 . pi2) . assocr
+<=> f = pi2 . assocr
+pi1 . pi1 = pi1 . assocr
+pi2 . pi1 = pi1 . f
+pi2 = pi2 . f
+(6)
+pi1 . pi1 = pi1 . assocr
+<pi2 . pi1, pi2> = pi2 . assocr
+(6)
+<pi1 . pi1, <pi2 . pi1, pi2>> = assocr
+(10)
+<pi1 . pi1, (pi2 x id)> = assocr
+--------------------------------
+fac . [_0, succ] = [ _1 , mul . <succ, fac> ]
+(20)
+[fac . _0, fac . succ] = [ _1 , mul . <succ, fac> ]
+(27)
+fac . _0 = _1
+fac . succ = mul . <succ, fac>
+(72)
+fac . _0 x = _1 x 
+fac . succ x = mul . <succ, fac> x
+(73, 75, 77)
+fac 0 = 1
+fac (x+1) = mul (succ x, fac x)
+<=>
+fac 0 = 1
+fac (x+1) = x+1 * (fac x)
+----------------------------------
+for b i 0 = i
+for b i (n+1) = b (for b i n)
+(75, def zero, def succ)
+for b i (zero _) = _i n
+for b i (succ n) = b (for b i n)
+(73)
+(for b i . zero) _ = _i n
+(for b i . succ) n = (b .  (for b i)) n
+(72)
+(for b i) . zero = _i
+(for b i) . succ = b . (for b i)
+(27)
+[(for b i) . zero, (for b i) . succ] = [ _i , b . (for b i) ]
+(20, 1)
+(for b i) . [zero, succ] = [ _i . id , b . (for b i) ]
+(22)
+(for b i) . [zero, succ] = [ _i, b] . (id + (for b i))
+(| g |) · in = g · (id + (| g |)) 

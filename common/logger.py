@@ -1,6 +1,7 @@
 from datetime import datetime
 import sys
 from threading import local
+from common.dns_packet import dns_packet
 from common.parser import Parser
 
 class Logger:
@@ -37,22 +38,37 @@ class Logger:
         f.write(line)
         f.close()
 
+    def parse_pdu(PDU: dns_packet):
+        values = "{"
+        for value in PDU.val_response:
+            values += f"[{value}], "
+        values = values + "}"
 
-    def log_qr(self, domain, ip, PDU, port = None):
-        #parse pdu?
-        self.write_log(domain, "QR", ip, PDU, port)
+        auths = "{"
+        for auth in PDU.val_zone:
+            auths += f"[{auth}], "
+        auths = auths + "}"
 
-    def log_qe(self, domain, ip, PDU, port = None):
-        #parse pdu?
-        self.write_log(domain, "QE", ip, PDU, port)
+        extras = "{"
+        for extra in PDU.val_extra:
+            extras += f"[{extra}], "
+        extras = extras + "}"
 
-    def log_rr(self, domain, ip, PDU, port = None):
-        #parse pdu?
-        self.write_log(domain, "RR", ip, PDU, port)
+        s = f"id: {PDU.message_id} | flags: {PDU.flags} | rCode: {PDU.responseCode} | #responses: {(PDU.num_values, PDU.num_auths, PDU.num_extra)} || request:({PDU.q_info}, {PDU.q_type}) | values: {values} | auths: {auths} | extras: {extras}"
+        return s
 
-    def log_rp(self, domain, ip, PDU, port = None):
-        #parse pdu?
-        self.write_log(domain, "RP", ip, PDU, port)
+    def log_qr(self, domain, ip, PDU: dns_packet, port = None):
+        
+        self.write_log(domain, "QR", ip, self.parse_pdu(PDU), port)
+
+    def log_qe(self, domain, ip, PDU: dns_packet, port = None):
+        self.write_log(domain, "QE", ip, self.parse_pdu(PDU), port)
+
+    def log_rr(self, domain, ip, PDU: dns_packet, port = None):
+        self.write_log(domain, "RR", ip, self.parse_pdu(PDU), port)
+
+    def log_rp(self, domain, ip, PDU: dns_packet, port = None):
+        self.write_log(domain, "RP", ip, self.parse_pdu(PDU), port)
 
     #Log de ZoneTransfer
     #ip = ip do outro servidor
@@ -63,7 +79,6 @@ class Logger:
 
 
     def log_ev(self, domain, event):
-        #parse pdu?
         self.write_log(domain, "EV", "localhost", event)
 
     def log_er(self, domain, ip, reason, port = None):
