@@ -1,10 +1,7 @@
 #Ficheiro de Configuração do Servidor Primário do Dominio found
 
-found. DB database.db
-
-found. SS 10.0.0.16:53
-found. SS 10.0.0.13:53
-found. DD 10.0.0.27:53
+found. SP 10.0.0.25
+found. DD 10.0.0.27
 
 found. LG /found/log.txt
 all LG /var/dns/all.log

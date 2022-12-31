@@ -1,0 +1,10 @@
+#Ficheiro de Configuração do Servidor Primário do Dominio dias
+
+dias. SP 10.0.0.14
+dias. DD 10.0.0.27
+
+dias. LG /dias/log.txt
+all LG /var/dns/all.log
+
+root ST listaST.txt
+

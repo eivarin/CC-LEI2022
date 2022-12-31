@@ -4,10 +4,10 @@ lost. DB database.db
 
 lost. SS 10.0.0.22:53
 lost. SS 10.0.0.28:53
+lost. DD 10.0.0.27:53
 
-lost. LG lost.log
-lost. DD 10.0.0.27
+lost. LG /lost/log.txt
+all LG /var/dns/all.log
 
-all LG all.log
 root ST listaST.txt
 
