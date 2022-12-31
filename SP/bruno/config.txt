@@ -1,13 +1,13 @@
-#Ficheiro de Configuração do Servidor Primário do Dominio bruno
+#Ficheiro de Configuração do Servidor Primário do Dominio bruno.dias
 
-lost. DB database.db
+dias. DB database.db
 
-lost. SS 10.0.0.15:53
-lost. SS 10.0.0.30:53
+dias. SS 10.0.0.15:53
+dias. SS 10.0.0.30:53
+dias. DD 10.0.0.27
 
-lost. LG bruno.log
-lost. DD 10.0.0.27
+lost. LG /dias/log.txt
+all LG /var/dns/all.log
 
-all LG all.log
 root ST listaST.txt
 

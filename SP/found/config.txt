@@ -1,13 +1,13 @@
 #Ficheiro de Configuração do Servidor Primário do Dominio found
 
-lost. DB database.db
+found. DB database.db
 
-lost. SS 10.0.0.16:53
-lost. SS 10.0.0.13:53
+found. SS 10.0.0.16:53
+found. SS 10.0.0.13:53
+found. DD 10.0.0.27:53
 
-lost. LG lost.log
-lost. DD 10.0.0.27
+found. LG /found/log.txt
+all LG /var/dns/all.log
 
-all LG all.log
 root ST listaST.txt
 
