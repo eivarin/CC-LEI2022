@@ -18,7 +18,7 @@ from common.parser import Parser, ArgsParser
 from common.logger import Logger
 from common.udp_handler import UDP_Handler
 from common.dns_packet import dns_packet
-from common.database import DB
+from common.database import DB, DB_entry
 
 class SP:
     def __init__(self, argv):
@@ -27,10 +27,10 @@ class SP:
         self.configs = Parser(self.args["config_file"])
         self.logger = Logger(self.configs, self.args["debug"])
         self.logger.log_st("all",self.args)
-        self.db = DB(self.configs)
         if "ST" in self.configs.result:
-            self.st_list = self.parse_st_file(self.configs.result["ST"])
-        self.ip = self.args["ip"]
+            self.st_list = self.configs.result["ST"]
+        self.db = DB(self.configs, self.logger, self.st_list)
+        self.ip: ip.IP = self.args["ip"]
         self.thrds = []
 
     def gen_args(self, args, flags):
@@ -68,6 +68,7 @@ class SP:
                 try:
                     bytes, sender = h.receive()
                     packet = dns_packet(encoded_bytes = bytes)
+                    self.logger.log_rr(domain, sender, packet, 1234)
                     has_response = True
                     refresh, _, _, _ = self.aux(domain)
                 except socket.timeout:
@@ -88,7 +89,7 @@ class SP:
         d = self.db.get_domain_SOA(domain)
         result = []
         for k in d:
-            result.append(int(k[0][0]))
+            result.append(int(k[0].value))
         return result
 
     def zone_transfer_ss_com(self, sp_ip: ip.IP, domain):
@@ -118,8 +119,8 @@ class SP:
             self.thrds.append(con)
             domain = con.recv(128).decode()
             print(domain)
-            if domain in self.db.domains and self.db.domains[domain][0]:
-                con.sendall(len(self.db.authority_to_domains[domain]).to_bytes(2, byteorder='big'))
+            if domain in self.db.zones and self.db.zones[domain][0] and ip.IP(senderIp[0], senderIp[1]) in self.configs["SS"]:
+                con.sendall(len(self.db.zone_to_domains[domain]).to_bytes(2, byteorder='big'))
                 resp = con.recv(128).decode()
                 print(resp)
                 if resp == "ok":
@@ -127,17 +128,42 @@ class SP:
                     self.db.zone_transfer(con, domain, False)
 
     def udp_waiter(self):
-        print(str(self.ip))
         h = UDP_Handler(self.ip)
         self.thrds.append(h)
         while True:
             bytes, sender = h.receive()
             packet = dns_packet(encoded_bytes = bytes)
-            print(str(packet))
+            if packet.q_info in self.db.domain_to_zones:
+                z = self.db.domain_to_zones[packet.q_info]
+                self.logger.log_qr(z, sender, packet)
+            self.logger.log_qr("all", sender, packet)
+            
             response = self.db.query(packet)
+            
+            needs_recursivity = response.responseCode == 2 or (response.responseCode == 1 and self.db.is_domain_cache(packet.q_info))
+            if packet.flags[1] and needs_recursivity:
+                response = self.recursive_query(packet,response,h)
+
+
+            if packet.q_info in self.db.domain_to_zones:
+                z = self.db.domain_to_zones[packet.q_info]
+                self.logger.log_rp(z, sender, packet)
+            self.logger.log_rp("all", sender, packet)
+            
             h.send(response.encodePacket(), ip.IP(sender[0], sender[1]))
 
-
+    def recursive_query(self, own_response: dns_packet, handler: UDP_Handler) -> dns_packet:
+        i = own_response.q_info
+        t = own_response.q_type
+        query = dns_packet(flags = (True, False, False), queryInfo = (i,t))
+        visited_ns = set()
+        visited_ns.add(self.ip)
+        while own_response.responseCode == 2 or (own_response.responseCode == 1 and own_response.flags[1]):
+            ns_list = own_response.val_zone.copy()
+            ns_list = list(map(lambda x: DB_entry(from_str=x), ns_list))
+            ns_list.sort(key=lambda x: x.priority)
+            a_list = own_response.val_extra.copy()
+            a_list = list(map(lambda x: DB_entry(from_str=x), ns_list))
     def parse_st_file(self, st_file):
         f = open(st_file,'r')
         possible_ips = f.read().splitlines()
@@ -158,13 +184,14 @@ class SP:
         i = 0
         self.ss_domains = {}
         self.sp_domains = {}
-        for domain, (is_sp, server_ip) in [(domain, self.db.domains[domain]) for domain in self.db.domains]:
+        for domain, (is_sp, server_ip) in [(domain, self.db.zones[domain]) for domain in self.db.zones]:
             if is_sp:
                 self.sp_domains[domain] = server_ip
             else:
                 self.ss_domains[domain] = server_ip
 
         self.zone_transfer_threads = []
+
         print(self.ss_domains)
         zone_transfer_lock = threading.Lock()
         for domain in self.ss_domains:
@@ -173,6 +200,7 @@ class SP:
             t = threading.Thread(target = self.zone_transfer_ss_checker, args=(domain,zone_transfer_lock))
             t.start()
             self.zone_transfer_threads.append(t)
+
         if len(self.sp_domains) > 0:
             self.tcp_t = threading.Thread(target = self.zone_transfer_sp)
             self.tcp_t.start()
