@@ -1,0 +1,10 @@
+#Ficheiro de Configuração do Servidor Primário do Dominio found
+
+found. SP 10.0.0.25
+found. DD 10.0.0.27
+
+found. LG /found/log.txt
+all LG /var/dns/all.log
+
+root ST listaST.txt
+

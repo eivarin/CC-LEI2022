@@ -1,0 +1,12 @@
+#Ficheiro de Configuração do Servidor Primário do Dominio dias
+
+dias. DB /dias/database.db
+
+dias. SS 10.0.0.18:53
+dias. SS 10.0.0.31:53
+dias. DD 10.0.0.27:53
+
+dias. LG /dias/log.txt
+all LG /var/dns/all.log
+
+root ST /dias/listaSTteste.txt

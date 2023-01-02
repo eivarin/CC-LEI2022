@@ -29,7 +29,7 @@ class dns_packet:
         self.q_type = unpacked_data_fields[1]
         self.queryInfo = (self.q_info, self.q_type)
         self.val_response =  list(filter(lambda s: s!="", unpacked_data_fields[2].split(self.joiner_inner)))
-        self.val_authority = list(filter(lambda s: s!="", unpacked_data_fields[3].split(self.joiner_inner)))
+        self.val_zone = list(filter(lambda s: s!="", unpacked_data_fields[3].split(self.joiner_inner)))
         self.val_extra =     list(filter(lambda s: s!="", unpacked_data_fields[4].split(self.joiner_inner)))
 
 
@@ -52,14 +52,14 @@ class dns_packet:
         for value in self.val_response:
             values += f"{value},\n"
         auths = "auths:\n"
-        for auth in self.val_authority:
+        for auth in self.val_zone:
             auths += f"{auth},\n"
         extras = "extras:\n"
         for extra in self.val_extra:
             extras += f"{extra},\n"    
         return header + values + auths + extras
 
-
+    #qra:query,recursive,auth
     def __init__(self,
                 flags: tuple[bool,bool,bool] = [False,False,False],
                 responseCode = 0,
@@ -85,13 +85,13 @@ class dns_packet:
             if self.queryInfo:
                 self.q_info, self.q_type = queryInfo
             self.val_response = responseValues
-            self.val_authority = authValues
+            self.val_zone = authValues
             self.val_extra = extraValues
             inter_list = [
                 self.q_info,
                 self.q_type,
                 self.gen_str_of_strs(self.val_response,self.joiner_inner),
-                self.gen_str_of_strs(self.val_authority, self.joiner_inner),
+                self.gen_str_of_strs(self.val_zone, self.joiner_inner),
                 self.gen_str_of_strs(self.val_extra,self.joiner_inner)
             ]
             self.dataFields = self.gen_str_of_strs(inter_list, self.joiner_outer)

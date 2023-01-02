@@ -1,0 +1,10 @@
+#Ficheiro de Configuração do Servidor Primário do Dominio lost
+
+lost. SP 10.0.0.19
+lost. DD 10.0.0.27
+
+lost. LG /lost/log.txt
+all LG /var/dns/all.log
+
+root ST listaST.txt
+
