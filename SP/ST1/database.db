@@ -1,0 +1,36 @@
+# DNS database file for rootserver
+
+@ DEFAULT lost.
+& DEFAULT dias.
+
+TTL DEFAULT 86400
+
+
+. SOASERIAL 0120112022 TTL
+
+
+@ NS ns1.lost. TTL
+@ NS ns2.lost. TTL
+@ NS ns3.lost. TTL
+
+& NS ns4.dias. TTL
+& NS ns5.dias. TTL
+& NS ns6.dias. TTL
+
+ns1 A 10.0.0.9 TTL
+ns2 A 10.0.0.22 TTL
+ns3 A 10.0.0.28 TTL
+
+ns4 A 10.0.0.14 TTL
+ns5 A 10.0.0.18 TTL
+ns6 A 10.0.0.31 TTL
+
+ftp A 10.0.0.4 TTL
+
+splost CNAME ns1 TTL
+ss1lost CNAME ns2 TTL
+ss2lost CNAME ns3 TTL
+
+spdias CNAME ns4 TTL
+ss1dias CNAME ns5 TTL
+ss2dias CNAME ns6 TTL
