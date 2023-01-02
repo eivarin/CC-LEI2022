@@ -2,7 +2,8 @@ import socket
 import sys
 from pathlib import Path
 import threading
-from time import sleep # if you haven't already done so
+from time import sleep
+import time # if you haven't already done so
 file = Path(__file__).resolve()
 parent, root = file.parent, file.parents[1]
 sys.path.append(str(root))
@@ -54,10 +55,9 @@ class SP:
         while True:
             other_time, needs_refresh =  self.wait_time(refresh,expire)
             if needs_refresh:
-                print("refreshing")
+                self.logger.log_ev(domain, f"refreshing-zone-serial")
                 has_response=False
                 expire = other_time
-                print(f"d:{domain} r:{refresh} e:{expire}")
                 packet = dns_packet(queryInfo= (domain,"SOASERIAL"), flags=(True,False,False))
                 ip_zt,_ = self.ip.ip_tuple()
                 lock.acquire()
@@ -72,6 +72,7 @@ class SP:
                     has_response = True
                     refresh, _, _, _ = self.aux(domain)
                 except socket.timeout:
+                    self.logger.log_ev(domain, f"zone-refreshing-failed - retrying")
                     refresh = retry
                 finally:
                     h.close()
@@ -82,6 +83,7 @@ class SP:
                     print(f"{domain} {self.aux(domain)}")
                     refresh, expire, retry, serial = self.aux(domain)
             else:
+                self.logger.log_ev(domain, f"zone-serial-expired")
                 self.zone_transfer_ss_com(sp_ip, domain)
                 refresh, expire, retry, serial = self.aux(domain)
 
@@ -100,12 +102,16 @@ class SP:
         #send domain
         tcp_sck.sendall(domain.encode())
         #receive number of entries
-        entries  = int.from_bytes(tcp_sck.recv(128), byteorder='big')
-        print(entries)
-        #send ok message
-        tcp_sck.sendall("ok".encode())
-        #receive zone transfer
-        self.db.zone_transfer(tcp_sck, domain, True)
+        ans = tcp_sck.recv(128)
+        if ans.decode() == "Refused":
+            start = time.time()
+            entries = int.from_bytes(ans, byteorder='big')
+            #send ok message
+            tcp_sck.sendall("ok".encode())
+            #receive zone transfer
+            total = self.db.zone_transfer(tcp_sck, domain, True)
+            end = time.time()
+            self.logger.log_zt(domain, sp_ip, ("SS", start-end, total))
 
 
     def zone_transfer_sp(self):
@@ -118,14 +124,19 @@ class SP:
             con, senderIp = tcp_sck.accept()
             self.thrds.append(con)
             domain = con.recv(128).decode()
-            print(domain)
-            if domain in self.db.zones and self.db.zones[domain][0] and ip.IP(senderIp[0], senderIp[1]) in self.configs["SS"]:
+            ss_ip = ip.IP(senderIp[0], senderIp[1])
+            if domain in self.db.zones and self.db.zones[domain][0] and ss_ip in self.configs["SS"]:
+                start = time.time()
                 con.sendall(len(self.db.zone_to_domains[domain]).to_bytes(2, byteorder='big'))
                 resp = con.recv(128).decode()
                 print(resp)
                 if resp == "ok":
-                    print("transfering")
-                    self.db.zone_transfer(con, domain, False)
+                    total = self.db.zone_transfer(con, domain, False)
+                    end = time.time()
+                    self.logger.log_zt(domain, ss_ip, ("SP", start-end, total))
+            else:
+                con.sendall("Refused".encode())
+                self.logger.log_ev(domain, f"zone-transfer-refused - {ss_ip} tried to zone transfer but isnt allowed")
 
     def udp_waiter(self):
         h = UDP_Handler(self.ip)
@@ -136,7 +147,8 @@ class SP:
             if packet.q_info in self.db.domain_to_zones:
                 z = self.db.domain_to_zones[packet.q_info]
                 self.logger.log_qr(z, sender, packet)
-            self.logger.log_qr("all", sender, packet)
+            else: 
+                self.logger.log_qr("all", sender, packet)
             
             response = self.db.query(packet)
             
@@ -144,26 +156,42 @@ class SP:
             if packet.flags[1] and needs_recursivity:
                 response = self.recursive_query(packet,response,h)
 
-
             if packet.q_info in self.db.domain_to_zones:
                 z = self.db.domain_to_zones[packet.q_info]
-                self.logger.log_rp(z, sender, packet)
-            self.logger.log_rp("all", sender, packet)
+                self.logger.log_rp(z, sender, response)
+            else: 
+                self.logger.log_rp("all", sender, response)
             
             h.send(response.encodePacket(), ip.IP(sender[0], sender[1]))
 
-    def recursive_query(self, own_response: dns_packet, handler: UDP_Handler) -> dns_packet:
+    def recursive_query(self, packet: dns_packet, own_response: dns_packet, handler: UDP_Handler) -> dns_packet:
         i = own_response.q_info
         t = own_response.q_type
         query = dns_packet(flags = (True, False, False), queryInfo = (i,t))
-        visited_ns = set()
-        visited_ns.add(self.ip)
+        visited_ips = set()
+        visited_ips.add(self.ip)
         while own_response.responseCode == 2 or (own_response.responseCode == 1 and own_response.flags[1]):
+            self.cache_query(own_response)
             ns_list = own_response.val_zone.copy()
-            ns_list = list(map(lambda x: DB_entry(from_str=x), ns_list))
+            ns_list = list(map(lambda x: DB_entry(from_str=x, is_Eternal=False), ns_list))
             ns_list.sort(key=lambda x: x.priority)
-            a_list = own_response.val_extra.copy()
-            a_list = list(map(lambda x: DB_entry(from_str=x), ns_list))
+            next_domain_to_be_queryd = ns_list[0].value
+            possible_IPs = list(map(lambda x: ip.IP(x.value), self.db.get_extra(next_domain_to_be_queryd)))
+            chosen_IP = possible_IPs[0]
+            if chosen_IP in visited_ips:
+                break
+            visited_ips.add(chosen_IP)
+            handler.send(packet, chosen_IP)
+            result, _ = handler.receive()
+            own_response = dns_packet(encoded_bytes = result)
+        self.cache_query(own_response)
+        own_response.flags[2] = False
+        return own_response
+
+    def cache_query(self, response: dns_packet):
+        for r in response.val_response + response.val_zone + response.val_extra:
+            self.db.add_cache_entry(DB_entry(from_str=r, is_Eternal=False))
+
     def parse_st_file(self, st_file):
         f = open(st_file,'r')
         possible_ips = f.read().splitlines()

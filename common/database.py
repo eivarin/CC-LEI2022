@@ -1,4 +1,5 @@
 import socket
+from typing import List
 from common.dns_packet import dns_packet
 from common import parser
 from common import ip
@@ -45,7 +46,7 @@ class DB_entry:
         return unparsed_str
 
     def is_Alive(self):
-        return self.is_Eternal and self.expiring_TTL - int(time()) < 0
+        return self.is_Eternal or self.expiring_TTL - int(time()) < 0
 
 class DB:
 
@@ -119,9 +120,10 @@ class DB:
                     self.zone_to_domains[zone] = set()
         
         #add st entrys
-        for st in st_list:
-            ns_entry = DB_entry("NS", [".","."])
-            a_entry = DB_entry("A", [".",st])
+        for i, st in enumerate(st_list):
+            ns_name = f"ns{i}."
+            ns_entry = DB_entry("NS", [".",ns_name])
+            a_entry = DB_entry("A", [ns_name,st])
             self.add(ns_entry)
             self.add(a_entry)
 
@@ -154,7 +156,16 @@ class DB:
             self.__db[entry.parameter] = {}
         if entry.type not in self.__db[entry.parameter]:
             self.__db[entry.parameter][entry.type] = []
-        self.__db[entry.parameter][entry.type].append(entry)   
+        self.__db[entry.parameter][entry.type].append(entry)
+        
+    def add_cache_entry(self, entry:DB_entry):
+        domain = entry.parameter
+        if domain in self.domain_to_zones == domain in self.zone_to_domains["cache"]:   
+            self.zone_to_domains["cache"].add(domain)
+            self.domain_to_zones[domain] = "cache"
+            self.add(entry)
+        else:
+            pass
 
     def count_entries_for_domain(self, parameter: str):
         count = 0
@@ -172,6 +183,7 @@ class DB:
     def is_domain_cache(self, domain):
         return domain in self.zone_to_domains["cache"]
 
+
     def is_domain_from_ss_zone(self, domain) -> bool:
         if domain in self.domain_to_zones:
             zone = self.domain_to_zones[zone]
@@ -180,14 +192,15 @@ class DB:
         return None
 
     def zone_transfer(self, con: socket.socket, zone: str, receiving: bool):
+        total = 0
         if receiving:
             self.delete_zone_entrys(zone)
             while True:
                 size = int.from_bytes(con.recv(2), byteorder='big')
+                total += size
                 entry = con.recv(size).decode()
                 if not entry:
                     break
-                print(entry + "\n")
                 new_entry = DB_entry(from_str = entry, defaults = {"@":"."})
                 self.zone_to_domains[zone].add(new_entry.parameter)
                 self.add(entry)
@@ -199,15 +212,26 @@ class DB:
                 for type in self.__db[d]:
                     for entry in self.__db[d][type]:
                         unparsed_str = str(entry)
-                        con.sendall(len(unparsed_str).to_bytes(2, byteorder='big'))
+                        size = len(unparsed_str)
+                        total += size
+                        con.sendall(size.to_bytes(2, byteorder='big'))
                         con.sendall(unparsed_str.encode())
             print(self.__db)
         con.close()
+        return total
 
     def get_domain_SOA(self,domain):
         x = self.__db[domain]
         return x["SOAREFRESH"], x["SOAEXPIRE"], x["SOARETRY"], x["SOASERIAL"]
 
+    def get_extra(self, x: DB_entry) -> List[DB_entry]:
+        domain = x.value
+        if 'A' in self.__db[domain]:
+            result = []
+            for entry in self.__db[domain]["A"]:
+                if entry.is_Alive():
+                    result.append(entry)
+            return result
 
 #check CNAME
 #check DDs -> needs sender IP
@@ -242,13 +266,7 @@ class DB:
                 if best_match[1] < points:
                     best_match = (test_param, points)
             
-            def check_extra(x: DB_entry, db):
-                    domain = x.value
-                    if 'A' in db[domain]:
-                        result = ""
-                        for entry in self.__db[domain]["A"]:
-                            result += f"{str(entry)},"
-                        return result[:-1]
+            
             
             p = ""
             t = ""
@@ -260,13 +278,14 @@ class DB:
                 p = packet.q_info
             else:
                 p = packet.q_info
-                response = [str(x) for x in self.__db[p][packet.q_type]]
+                response = [str(x) for x in self.__db[p][packet.q_type] if x.is_Alive()]
 
-            auths = [str(x) for x in self.__db[p]['NS']]
-            extra = [check_extra(x, self.__db) for x in auths]
+            auths = [str(x) for x in self.__db[p]['NS']if x.is_Alive()]
+            extra = [self.get_extra(x) for x in auths]
 
             if packet.q_type not in ["A", "DEFAULT", "SOASP", "SOAADMIN", "SOASERIAL", "SOAREFRESH", "SOARETRY", "SOAEXPIRE"] and response != []:
-                extra += [check_extra(x, self.__db) for x in response]
+                extra += [self.get_extra(x) for x in response]
+            extra = [str(entry) for sublist in extra for entry in sublist]
 
             is_cache = packet.q_info in self.zone_to_domains["cache"]
             is_ss_domain = response_code < 2 and (self.is_domain_from_ss_zone(packet.q_info))
