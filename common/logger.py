@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 import sys
 from threading import local
 from common.dns_packet import dns_packet
@@ -6,6 +7,7 @@ from common.parser import Parser
 
 class Logger:
     def __init__(self, configs: Parser, is_debug: bool) -> None:
+        Path( '/var/dns' ).mkdir( parents=True, exist_ok=True )
         self.allLogs = []
         self.domain_log_files = {}
         if configs != None:

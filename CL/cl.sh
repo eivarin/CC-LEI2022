@@ -1,1 +1,1 @@
-python3.10 client.py 10.0.0.1  A
+python3.10 client.py lost. 10.0.0.11 NS
