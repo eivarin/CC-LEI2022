@@ -1,6 +1,6 @@
 #Ficheiro de Configuração do Servidor Primário do Dominio found
 
-found. DB SP/found/database.db
+found. DB database.db
 
 found. SS 10.0.0.16:53
 found. SS 10.0.0.13:53

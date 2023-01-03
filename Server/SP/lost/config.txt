@@ -1,6 +1,6 @@
 #Ficheiro de Configuração do Servidor Primário do Dominio Lost
 
-lost. DB SP/lost/database.db
+lost. DB database.db
 
 lost. SS 10.0.0.22:53
 lost. SS 10.0.0.28:53

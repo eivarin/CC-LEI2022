@@ -1,0 +1,1 @@
+python3.10 ../../server.py ST1.CONF --ip 10.0.0.11 --mode debug

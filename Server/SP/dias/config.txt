@@ -1,6 +1,6 @@
 #Ficheiro de Configuração do Servidor Primário do Dominio dias
 
-dias. DB SP/dias/database.db
+dias. DB database.db
 
 dias. SS 10.0.0.18:53
 dias. SS 10.0.0.31:53

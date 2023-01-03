@@ -1,0 +1,1 @@
+python3.10 ../../server.py SR.CONF --ip 10.0.0.10 --mode debug

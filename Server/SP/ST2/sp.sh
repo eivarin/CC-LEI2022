@@ -1,0 +1,1 @@
+python3.10 ../../server.py config.txt --ip 10.0.0.29 --mode debug
