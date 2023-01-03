@@ -2,6 +2,7 @@ import socket
 from sys import argv, path
 from pathlib import Path
 from time import sleep # if you haven't already done so
+
 file = Path(__file__).resolve()
 parent, root = file.parent, file.parents[1]
 path.append(str(root))
@@ -12,11 +13,8 @@ try:
 except ValueError: # Already removed
     pass
 
-# isto não pode ficar mais bonito?
-from common import ip
-from common import udp_handler as udp
-from common import dns_packet as dns
-from common import logger
+# isto ficou mais bonito
+from common import udp_handler as udp, ip, dns_packet as dns, logger
 
 def main(argv):
     help = '''
@@ -39,9 +37,14 @@ CNAME
 PTR
     Specifies a name of a server/host using the IPv4 presented as argument.
 '''
+    # verificar IP
     is_ip, has_port = ip.check_ip(argv[1])
     destiny_ip = argv[1]
-    # verificar se o IP está correto
+    
+    # verificar reverse
+    is_ptr, _ = ip.check_ip(argv[2])
+
+    # verificar o resto dos argumentos juntamente do IP
     if len(argv) not in range(4, 5) or not is_ip:
         return print(help)
     
@@ -54,7 +57,7 @@ PTR
         'R',
         'MX'
     ])
- 
+
     if any([x not in possible_types for x in argv[3:]]):
         return print(help)
 
@@ -71,14 +74,17 @@ PTR
     )
     log_maker = logger.Logger(None, True)
 
-    if is_ip:
-        if not has_port:
-            destiny_ip += ":53"
+    if is_ip and not has_port:
+        destiny_ip += ":53"
         
+    ptr = argv[2]
+    if is_ptr:
+        ptr = ptr.split('.')
+        ptr = f'{ptr[3]}.{ptr[2]}.{ptr[1]}.{ptr[0]}'
         
     udp_skt = udp.UDP_Handler()
     udp_skt.send(query.encodePacket(), ip.IP(destiny_ip, has_port= True))
-    result, sender = udp_skt.receive()
+    result, _ = udp_skt.receive()
 
     this_ip = ip.IP(argv[1], has_port)
     this_ip, port = this_ip.ip_tuple()
