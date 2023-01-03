@@ -12,7 +12,7 @@ TTL DEFAULT 86400
 @ NS ns1.found. TTL
 @ NS ns2.found. TTL
 @ NS ns3.found. TTL
-lost. @ NS sp.lost.found. TTL
+lost.@ NS sp.lost.found. TTL
 @ MX mx1.found. TTL 10
 @ MX mx2.found. TTL 20
 ns1 A 10.0.0.25 TTL

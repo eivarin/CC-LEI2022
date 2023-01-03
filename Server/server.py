@@ -44,7 +44,7 @@ class SP:
         times = { 'refresh': refresh, 'expire': expire }
         max, min = min_time(times)
         sleep(times[min])
-        return times[max] - times[min], min == 'refresh'
+        return times[max] - times[min], min == 'refresh' # log de qual foi o resultado do wait qual o  valor que foi alterado 
     
     def zone_transfer_ss_checker(self, domain, lock):
         sp_ip = None
@@ -55,7 +55,7 @@ class SP:
         while True:
             other_time, needs_refresh =  self.wait_time(refresh,expire)
             if needs_refresh:
-                self.logger.log_ev(domain, f"refreshing-zone-serial")
+                self.logger.log_ev(domain, f"refreshing-zone-serial") # log 
                 has_response=False
                 expire = other_time
                 packet = dns_packet(queryInfo= (domain,"SOASERIAL"), flags=(True,False,False))
@@ -72,18 +72,18 @@ class SP:
                     has_response = True
                     refresh, _, _, _ = self.aux(domain)
                 except socket.timeout:
-                    self.logger.log_ev(domain, f"zone-refreshing-failed - retrying")
+                    self.logger.log_ev(domain, f"zone-refreshing-failed - retrying") 
                     refresh = retry
                 finally:
                     h.close()
                     lock.release()
                 if has_response and int(packet.val_response[0].split()[2]) > serial:
-                    print(f"{int(packet.val_response[0].split()[2])} > {serial}")
+                    print(f"{int(packet.val_response[0].split()[2])} > {serial}") # log da resposta
                     self.zone_transfer_ss_com(sp_ip, domain)
                     print(f"{domain} {self.aux(domain)}")
                     refresh, expire, retry, serial = self.aux(domain)
             else:
-                self.logger.log_ev(domain, f"zone-serial-expired")
+                self.logger.log_ev(domain, f"zone-serial-expired") 
                 self.zone_transfer_ss_com(sp_ip, domain)
                 refresh, expire, retry, serial = self.aux(domain)
 
@@ -113,7 +113,7 @@ class SP:
             end = time.time()
             self.logger.log_zt(domain, sp_ip, ("SS", start-end, total))
 
-
+    # log
     def zone_transfer_sp(self):
         tcp_sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp_sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -175,22 +175,23 @@ class SP:
             ns_list = own_response.val_zone.copy()
             ns_list = list(map(lambda x: DB_entry(from_str=x, is_Eternal=False), ns_list))
             ns_list.sort(key=lambda x: x.priority)
-            next_domain_to_be_queryd = ns_list[0].value
+            next_domain_to_be_queryd = ns_list[0].value # log do domain que vai ser queried
             possible_IPs = list(map(lambda x: ip.IP(x.value), self.db.get_extra(next_domain_to_be_queryd)))
             chosen_IP = possible_IPs[0]
             if chosen_IP in visited_ips:
                 break
             visited_ips.add(chosen_IP)
             handler.send(packet, chosen_IP)
-            result, _ = handler.receive()
+            result, _ = handler.receive() # query do resultado
             own_response = dns_packet(encoded_bytes = result)
         self.cache_query(own_response)
         own_response.flags[2] = False
-        return own_response
+        return own_response # log da resposta
 
+    #log aqui
     def cache_query(self, response: dns_packet):
         for r in response.val_response + response.val_zone + response.val_extra:
-            self.db.add_cache_entry(DB_entry(from_str=r, is_Eternal=False))
+            self.db.add_cache_entry(DB_entry(from_str=r, is_Eternal=False)) # query a cache
 
     def parse_st_file(self, st_file):
         f = open(st_file,'r')
@@ -199,11 +200,11 @@ class SP:
         for i in possible_ips:
             is_ip, has_port = ip.check_ip(i)
             if is_ip:
-                r.append(ip.IP(i, has_port=has_port))
+                r.append(ip.IP(i, has_port=has_port)) # log das coisas parsed
         return r
 
     def stop(self, reason):
-        self.logger.log_sp("all", reason)
+        self.logger.log_sp("all", reason) 
         for s in self.thrds:
             s.close()
         exit()
