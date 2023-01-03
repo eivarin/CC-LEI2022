@@ -1,7 +1,7 @@
 
 
 # DNS database file for domain .found.
-@ DEFAULT found.
+@ DEFAULT found.lost.
 TTL DEFAULT 86400
 @ SOASP ns1.found. TTL
 @ SOAADMIN dns\.admin.found.com. TTL
@@ -9,12 +9,12 @@ TTL DEFAULT 86400
 @ SOAREFRESH 14400 TTL
 @ SOARETRY 3600 TTL
 @ SOAEXPIRE 604800 TTL
-@ NS ns1.found. TTL
-@ NS ns2.found. TTL
-@ NS ns3.found. TTL
-lost.@ NS sp.lost.found. TTL
-@ MX mx1.found. TTL 10
-@ MX mx2.found. TTL 20
+@ NS ns1.found.lost. TTL
+@ NS ns2.found.lost. TTL
+@ NS ns3.found.lost. TTL
+lost.@ NS sp.lost.found.lost. TTL
+@ MX mx1.found.lost. TTL 10
+@ MX mx2.found.lost. TTL 20
 ns1 A 10.0.0.25 TTL
 ns2 A 10.0.0.16 TTL
 ns3 A 10.0.0.13 TTL

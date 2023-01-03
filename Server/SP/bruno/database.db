@@ -1,7 +1,5 @@
-
-
 # DNS database file for domain .bruno.
-@ DEFAULT bruno.
+@ DEFAULT bruno.dias.
 TTL DEFAULT 86400
 @ SOASP ns1.bruno. TTL
 @ SOAADMIN dns\.admin.bruno.com. TTL
@@ -9,12 +7,12 @@ TTL DEFAULT 86400
 @ SOAREFRESH 14400 TTL
 @ SOARETRY 3600 TTL
 @ SOAEXPIRE 604800 TTL
-@ NS ns1.bruno. TTL
-@ NS ns2.bruno. TTL
-@ NS ns3.bruno. TTL
-dias.@ NS sp.dias.bruno TTL
-@ MX mx1.bruno. TTL 10
-@ MX mx2.bruno. TTL 20
+@ NS ns1.bruno.dias. TTL
+@ NS ns2.bruno.dias. TTL
+@ NS ns3.bruno.dias. TTL
+dias.@ NS sp.dias.bruno.dias. TTL
+@ MX mx1.bruno.dias. TTL 10
+@ MX mx2.bruno.dias. TTL 20
 ns1 A 10.0.0.29 TTL
 ns2 A 10.0.0.15 TTL
 ns3 A 10.0.0.30 TTL

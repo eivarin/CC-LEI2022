@@ -1,29 +1,30 @@
 # DNS database file for domain .reverse.
 
 @ DEFAULT reverse.
+TTL DEFAULT 86400
 
-reverse. SOASP ns1.reverse. 10
-reverse. SOAADMIN dns\.reverse. 10
-reverse. SOASERIAL 0117102022 10
-reverse. SOAREFRESH 10 10
-reverse. SOARETRY 1 10
-reverse. SOAEXPIRE 600 10
+reverse. SOASP ns1.reverse. TTL
+reverse. SOAADMIN dns.reverse. TTL
+reverse. SOASERIAL 0117102022 TTL
+reverse. SOAREFRESH 14400 TTL
+reverse. SOARETRY 1 TTL
+reverse. SOAEXPIRE 600 TTL
 
-reverse. NS ns1.reverse. 10
-reverse. NS ns2.reverse. 10
-reverse. NS ns3.reverse. 10
+reverse. NS ns1.reverse. TTL
+reverse. NS ns2.reverse. TTL
+reverse. NS ns3.reverse. TTL
 
-in-addr NS ns1.in-addr 10
-in-addr NS ns2.in-addr 10
-in-addr NS ns3.in-addr 10
+in-addr NS ns1.in-addr TTL
+in-addr NS ns2.in-addr TTL
+in-addr NS ns3.in-addr TTL
 
-reverse. MX mx1.reverse. 10 10
-reverse. MX mx2.reverse. 10 20
+reverse. MX mx1.reverse. TTL 10
+reverse. MX mx2.reverse. TTL 20
 
-ns1 A 10.0.0.10:58 10
-ns2 A 10.0.0.21:58 10
-ns3 A 10.0.0.17:58 10
+ns1 A 10.0.0.10:58 TTL
+ns2 A 10.0.0.21:58 TTL
+ns3 A 10.0.0.17:58 TTL
 
-ns1.in-addr A 10.0.0.10:58 10
-ns2.in-addr A 10.0.0.21:58 10
-ns3.in-addr A 10.0.0.17:58 10
+ns1.in-addr A 10.0.0.10:58 TTL
+ns2.in-addr A 10.0.0.21:58 TTL
+ns3.in-addr A 10.0.0.17:58 TTL

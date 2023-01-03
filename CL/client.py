@@ -56,10 +56,16 @@ PTR
         'CNAME',
         'A',
         'R',
-        'MX'
+        'MX',
+        "PTR"
     ])
     if any([x not in possible_types for x in argv[3:]]):
         return print(help)
+    ptr = argv[2]
+    if is_ptr:
+        ptr = ptr.split('.')
+        ptr = f'{ptr[3]}.{ptr[2]}.{ptr[1]}.{ptr[0]}'
+        ptr += ".in-addr.reverse."
 
     query = dns.dns_packet(
         flags = (
@@ -68,7 +74,7 @@ PTR
             False
         ),
         queryInfo = (
-            argv[2],
+            ptr,
             argv[3]
         )
     )
@@ -76,11 +82,6 @@ PTR
 
     if is_ip and not has_port:
         destiny_ip += ":53"
-        
-    ptr = argv[2]
-    if is_ptr:
-        ptr = ptr.split('.')
-        ptr = f'{ptr[3]}.{ptr[2]}.{ptr[1]}.{ptr[0]}'
         
     udp_skt = udp.UDP_Handler()
     udp_skt.send(query.encodePacket(), ip.IP(destiny_ip, has_port= True))

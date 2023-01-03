@@ -132,6 +132,7 @@ class DB:
         self.domain_to_zones = {}
         for z in self.zone_to_domains:
             self.__gen_domain_to_zones(z)
+        print(str(self))
 
     def __gen_domain_to_zones(self, zone):
         if zone in self.zone_to_domains:
@@ -270,7 +271,8 @@ class DB:
 
             #check cname
             if packet.q_info in self.__db and "CNAME" in self.__db[packet.q_info]:
-                packet.q_info = self.__db[packet.q_info]["CNAME"][0].value
+                print(list(self.__db[packet.q_info]["CNAME"])[0].value)
+                packet.q_info = list(self.__db[packet.q_info]["CNAME"])[0].value
 
             response = []
 
@@ -309,7 +311,7 @@ class DB:
                 auths = [str(x) for x in self.__db[p]['NS']if x.is_Alive()]
             extra = [self.get_extra(x) for x in auths]
 
-            if packet.q_type not in ["A", "DEFAULT", "SOASP", "SOAADMIN", "SOASERIAL", "SOAREFRESH", "SOARETRY", "SOAEXPIRE"] and response != []:
+            if packet.q_type not in ["A", "DEFAULT", "SOASP", "SOAADMIN", "SOASERIAL", "SOAREFRESH", "SOARETRY", "SOAEXPIRE", "PTR"] and response != []:
                 extra += [self.get_extra(x) for x in response]
             extra = [str(entry) for sublist in extra for entry in sublist]
 

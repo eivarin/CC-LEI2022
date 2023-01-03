@@ -16,6 +16,10 @@ dias. NS ns1.dias. TTL
 dias. NS ns2.dias. TTL
 dias. NS ns3.dias. TTL
 
+reverse. NS ns1.reverse. TTL
+reverse. NS ns2.reverse. TTL
+reverse. NS ns3.reverse. TTL
+
 ns1.lost. A 10.0.0.9 TTL
 ns2.lost. A 10.0.0.22 TTL
 ns3.lost. A 10.0.0.28 TTL
@@ -24,4 +28,6 @@ ns1.dias. A 10.0.0.14 TTL
 ns2.dias. A 10.0.0.18 TTL
 ns3.dias. A 10.0.0.31 TTL
 
-
+ns1.reverse. A 10.0.0.10 TTL
+ns2.reverse. A 10.0.0.21 TTL
+ns3.reverse. A 10.0.0.17 TTL

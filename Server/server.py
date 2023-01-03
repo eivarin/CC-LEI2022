@@ -129,17 +129,17 @@ class SP:
             self.thrds.append(con)
             domain = con.recv(128).decode()
             ss_ip = ip.IP(senderIp[0], senderIp[1])
-            if domain in self.db.zones and self.db.zones[domain][0] and ss_ip in self.configs["SS"]:
-                start = time.time()
-                con.sendall(len(self.db.zone_to_domains[domain]).to_bytes(2, byteorder='big'))
-                resp = con.recv(128).decode()
-                if resp == "ok":
-                    total = self.db.zone_transfer(con, domain, False)
-                    end = time.time()
-                    self.logger.log_zt(domain, ss_ip, ("SP", start-end, total))
-            else:
-                con.sendall("Refused".encode())
-                self.logger.log_ev(domain, f"zone-transfer-refused - {ss_ip} tried to zone transfer but isnt allowed")
+            # if domain in self.db.zones and self.db.zones[domain][0] and ss_ip in self.configs.result["SS"]:
+            start = time.time()
+            con.sendall(len(self.db.zone_to_domains[domain]).to_bytes(2, byteorder='big'))
+            resp = con.recv(128).decode()
+            if resp == "ok":
+                total = self.db.zone_transfer(con, domain, False)
+                end = time.time()
+                self.logger.log_zt(domain, ss_ip, ("SP", start-end, total))
+            # else:
+                # con.sendall("Refused".encode())
+                # self.logger.log_ev(domain, f"zone-transfer-refused - {ss_ip} tried to zone transfer but isnt allowed")
 
     def udp_waiter(self):
         h = UDP_Handler(self.ip)
@@ -164,6 +164,8 @@ class SP:
                 continue
             
             response = self.db.query(packet)
+            print(response)
+
             needs_recursivity = response.responseCode == 2 or (response.responseCode == 1 and self.db.is_domain_cache(packet.q_info))
             if packet.flags[1] and needs_recursivity:
                 response = self.check_sr_dd(packet,response,h)
@@ -223,7 +225,8 @@ class SP:
         possible_ips = f.read().splitlines()
         r = []
         for i in possible_ips:
-            r.append(i) # log
+            if i[0] == "#":
+                r.append(i) # log
         return r
 
     def stop(self, reason):
