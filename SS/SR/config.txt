@@ -1,0 +1,10 @@
+#Ficheiro de Configuração do Servidor Secundario Reverse 
+
+. SP 10.0.0.27
+. DD 10.0.0.34
+
+. LG /reverse/log.txt
+all LG /var/dns/all.log
+
+root ST listaST.txt
+
