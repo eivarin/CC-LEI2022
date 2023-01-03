@@ -1,1 +1,1 @@
-python3.10 sp.py config2 --ip 10.0.0.2
+python3.10 server.py SP/dias/config.txt --ip 10.0.0.14 --mode debug

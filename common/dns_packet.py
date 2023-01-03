@@ -31,6 +31,14 @@ class dns_packet:
         self.val_response =  list(filter(lambda s: s!="", unpacked_data_fields[2].split(self.joiner_inner)))
         self.val_zone = list(filter(lambda s: s!="", unpacked_data_fields[3].split(self.joiner_inner)))
         self.val_extra =     list(filter(lambda s: s!="", unpacked_data_fields[4].split(self.joiner_inner)))
+        inter_list = [
+                self.q_info,
+                self.q_type,
+                self.gen_str_of_strs(self.val_response,self.joiner_inner),
+                self.gen_str_of_strs(self.val_zone, self.joiner_inner),
+                self.gen_str_of_strs(self.val_extra,self.joiner_inner)
+            ]
+        self.dataFields = self.gen_str_of_strs(inter_list, self.joiner_outer)
 
 
     def encode_flags_and_response(self):

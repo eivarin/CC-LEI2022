@@ -45,7 +45,8 @@ PTR
     is_ptr, _ = ip.check_ip(argv[2])
 
     # verificar o resto dos argumentos juntamente do IP
-    if len(argv) not in range(4, 5) or not is_ip:
+    if len(argv) not in range(5,6) or not is_ip:
+        print(len(argv))
         return print(help)
     
 
@@ -57,7 +58,6 @@ PTR
         'R',
         'MX'
     ])
-
     if any([x not in possible_types for x in argv[3:]]):
         return print(help)
 

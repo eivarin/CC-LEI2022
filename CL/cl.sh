@@ -1,1 +1,1 @@
-python3.10 client.py 10.0.0.1 lost. NS
+python3.10 client.py 10.0.0.14 dias. MX R
