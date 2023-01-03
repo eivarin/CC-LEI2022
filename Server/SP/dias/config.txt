@@ -2,9 +2,9 @@
 
 dias. DB database.db
 
-dias. SS 10.0.0.18:53
-dias. SS 10.0.0.31:53
-dias. DD 10.0.0.27:53
+dias. SS 10.0.0.18
+dias. SS 10.0.0.31
+dias. DD 10.0.0.27
 
 dias. LG /var/dns/dias.txt
 all LG /var/dns/all.log
