@@ -1,0 +1,29 @@
+# DNS database file for domain .reverse.
+
+@ DEFAULT reverse.
+
+reverse. SOASP ns1.reverse. 10
+reverse. SOAADMIN dns\.reverse. 10
+reverse. SOASERIAL 0117102022 10
+reverse. SOAREFRESH 10 10
+reverse. SOARETRY 1 10
+reverse. SOAEXPIRE 600 10
+
+reverse. NS ns1.reverse. 10
+reverse. NS ns2.reverse. 10
+reverse. NS ns3.reverse. 10
+
+in-addr NS ns1.in-addr 10
+in-addr NS ns2.in-addr 10
+in-addr NS ns3.in-addr 10
+
+reverse. MX mx1.reverse. 10 10
+reverse. MX mx2.reverse. 10 20
+
+ns1 A 10.0.0.10:58 10
+ns2 A 10.0.0.21:58 10
+ns3 A 10.0.0.17:58 10
+
+ns1.in-addr A 10.0.0.10:58 10
+ns2.in-addr A 10.0.0.21:58 10
+ns3.in-addr A 10.0.0.17:58 10
