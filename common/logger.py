@@ -40,7 +40,7 @@ class Logger:
         f.write(line)
         f.close()
 
-    def parse_pdu(PDU: dns_packet):
+    def parse_pdu(self, PDU: dns_packet):
         values = "{"
         for value in PDU.val_response:
             values += f"[{value}], "

@@ -42,7 +42,7 @@ class DB_entry:
         return str(self) == str(other)
 
     def __str__(self):
-        unparsed_str = f"{self.entry} {self.type} {self.value} {self.default_TTL} {self.priority}"
+        unparsed_str = f"{self.parameter} {self.type} {self.value} {self.default_TTL} {self.priority}"
         return unparsed_str
 
     def is_Alive(self):
@@ -87,10 +87,10 @@ class DB:
         a = []
         if "SS" in configs.result:
             a += configs.result["SS"]
-        if "DB" in configs.result:
+        if "DB"  in configs.result:
             a += configs.result["DB"]
         if len(a) > 0:
-            for domain, server_ip in configs.result["SS"] + configs.result["DB"]:
+            for domain, server_ip in a:
                 is_ip, has_port = ip.check_ip(server_ip)
                 if is_ip:
                     if not has_port:
@@ -109,11 +109,12 @@ class DB:
                 if zone not in self.zone_to_domains:
                     self.zone_to_domains[zone] = set()
                 for type in unparsed_db.result.keys():
-                    new_entry = DB_entry(type, unparsed_db.result[type], defaults)
-                    self.zone_to_domains[zone].add(new_entry.parameter)
-                    if new_entry.type == "Default":
-                        defaults[new_entry.parameter] = new_entry.value
-                    self.add(new_entry)
+                    for e in unparsed_db.result[type]:
+                        new_entry = DB_entry(type, e, defaults)
+                        self.zone_to_domains[zone].add(new_entry.parameter)
+                        if new_entry.type == "DEFAULT":
+                            defaults[new_entry.parameter] = new_entry.value
+                        self.add(new_entry)
         if "SP" in configs.result:
             for zone, value in configs.result["SP"]:
                 if zone not in self.zone_to_domains:
@@ -122,8 +123,8 @@ class DB:
         #add st entrys
         for i, st in enumerate(st_list):
             ns_name = f"ns{i}."
-            ns_entry = DB_entry("NS", [".",ns_name])
-            a_entry = DB_entry("A", [ns_name,st])
+            ns_entry = DB_entry("NS", [".",ns_name],{"@":"."})
+            a_entry = DB_entry("A", [ns_name,st],{"@":"."}) 
             self.add(ns_entry)
             self.add(a_entry)
 
@@ -186,7 +187,7 @@ class DB:
 
     def is_domain_from_ss_zone(self, domain) -> bool:
         if domain in self.domain_to_zones:
-            zone = self.domain_to_zones[zone]
+            zone = self.domain_to_zones[domain]
             if zone in self.zones:
                 return not self.zones[zone][0]
         return None
@@ -224,8 +225,8 @@ class DB:
         x = self.__db[domain]
         return x["SOAREFRESH"], x["SOAEXPIRE"], x["SOARETRY"], x["SOASERIAL"]
 
-    def get_extra(self, x: DB_entry) -> List[DB_entry]:
-        domain = x.value
+    def get_extra(self, x: str) -> List[DB_entry]:
+        domain = DB_entry(from_str=x).value
         if 'A' in self.__db[domain]:
             result = []
             for entry in self.__db[domain]["A"]:
@@ -249,11 +250,10 @@ class DB:
 
             response = []
 
-            queryed_param = packet.q_info
-            queryed_param.reverse()
+            queryed_param = packet.q_info[::-1]
             best_match = (".",1)
             for test_param in self.__db:
-                test_param.reverse()
+                test_param = test_param[::-1]
                 i=0
                 points=0
                 while i<len(test_param) and i<len(queryed_param):
@@ -262,7 +262,7 @@ class DB:
                         i+=1
                     else:
                         break
-                test_param.reverse()
+                test_param = test_param[::-1]
                 if best_match[1] < points:
                     best_match = (test_param, points)
             
@@ -294,7 +294,7 @@ class DB:
             flag_a = not (is_cache or is_ss_domain)
             flags = (False, flag_r, flag_a)
 
-            return dns_packet.dns_packet(
+            return dns_packet(
                 flags = flags,
                 # 0 = sucesso, 
                 # 1 = o nome existe, mas não há name e type,
