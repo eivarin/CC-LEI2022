@@ -1,1 +1,1 @@
-python3.10 server.py SP/ST1/ST1.conf --ip 10.0.0.1 --mode debug
+python3.10 server.py SP/ST1/ST1.conf --ip 10.0.0.11 --mode debug

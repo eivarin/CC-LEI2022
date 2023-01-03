@@ -11,7 +11,8 @@ class IP:
         if has_port and port != None:
             ip, port = ip.split(':')
             port = int(port)
-
+        if ip[-1] == ".":
+            ip = ip[:-1]
         ip = [int(i) for i in ip.split('.')]
         self.ip = (
             C.c_uint8(ip[0]),

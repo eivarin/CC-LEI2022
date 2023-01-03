@@ -1,13 +1,13 @@
 #Ficheiro de Configuração do Servidor Primário do Dominio Lost
 
-lost. DB SP/lost/database.db
+lost. DB SP/lost/database.txt
 
 lost. SS 10.0.0.22:53
 lost. SS 10.0.0.28:53
-lost. DD 10.0.0.27:53
+lost. DD 10.0.0.27
 
 lost. LG /var/dns/Lost.txt
 all LG /var/dns/all.log
 
-root ST listaST.txt
+root ST listaSTteste.txt
 

@@ -1,10 +1,11 @@
 #Ficheiro de Configuração do Servidor Primário do Dominio dias
 
-dias. DB SP/dias/database.db
+dias. DB SP/dias/database.txt
 
 dias. SS 10.0.0.18:53
 dias. SS 10.0.0.31:53
-dias. DD 10.0.0.27:53
+dias. DD 10.0.0.20
+lost. DD 10.0.0.9
 
 dias. LG /var/dns/dias.txt
 all LG /var/dns/all.log

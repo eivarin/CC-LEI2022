@@ -1,0 +1,1 @@
+python3.10 server.py SP/lost/config.txt --ip 10.0.0.9 --mode debug

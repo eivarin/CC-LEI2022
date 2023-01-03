@@ -29,7 +29,11 @@ class SP:
         self.logger = Logger(self.configs, self.args["debug"])
         self.logger.log_st("all",self.args)
         if "ST" in self.configs.result:
-            self.st_list = self.configs.result["ST"]
+            self.st_list = self.parse_st_file(self.configs.result["ST"][0][1])
+        self.DD = {}
+        if "DD" in self.configs.result:
+            for d,i in self.configs.result["DD"]:
+                self.DD[d] = ip.IP(i)
         self.db = DB(self.configs, self.logger, self.st_list)
         self.ip: ip.IP = self.args["ip"]
         self.thrds = []
@@ -129,7 +133,6 @@ class SP:
                 start = time.time()
                 con.sendall(len(self.db.zone_to_domains[domain]).to_bytes(2, byteorder='big'))
                 resp = con.recv(128).decode()
-                print(resp)
                 if resp == "ok":
                     total = self.db.zone_transfer(con, domain, False)
                     end = time.time()
@@ -144,14 +147,26 @@ class SP:
         while True:
             bytes, sender = h.receive()
             packet = dns_packet(encoded_bytes = bytes)
+            d = packet.q_info
             if packet.q_info in self.db.domain_to_zones:
                 z = self.db.domain_to_zones[packet.q_info]
                 self.logger.log_qr(z, sender, packet)
             else: 
                 self.logger.log_qr("all", sender, packet)
+            if d in self.DD and (d in self.db.domain_to_zones and self.db.domain_to_zones[d] not in ["", "cache"]) and self.DD[d].ip_tuple() != ip.IP(sender[0], sender[1]).ip_tuple():
+                p = dns_packet(flags = (False,False,False), responseCode = 4, queryInfo=(packet.q_info,packet.q_type))
+                h.send(p.encodePacket(), ip.IP(sender[0], sender[1]))
+                if packet.q_info in self.db.domain_to_zones:
+                    z = self.db.domain_to_zones[packet.q_info]
+                    self.logger.log_rp(z, sender, p)
+                else: 
+                    self.logger.log_rp("all", sender, p)
+                continue
             
             response = self.db.query(packet)
-            
+            needs_recursivity = response.responseCode == 2 or (response.responseCode == 1 and self.db.is_domain_cache(packet.q_info))
+            if packet.flags[1] and needs_recursivity:
+                response = self.check_sr_dd(packet,response,h)
             needs_recursivity = response.responseCode == 2 or (response.responseCode == 1 and self.db.is_domain_cache(packet.q_info))
             if packet.flags[1] and needs_recursivity:
                 response = self.recursive_query(packet,response,h)
@@ -164,28 +179,38 @@ class SP:
             
             h.send(response.encodePacket(), ip.IP(sender[0], sender[1]))
 
+    def check_sr_dd(self, packet: dns_packet, own_response: dns_packet, handler: UDP_Handler):
+        if own_response.q_info in self.DD:
+            handler.send(packet.encodePacket(), self.DD[own_response.q_info])
+            result, _ = handler.receive()
+            own_response = dns_packet(encoded_bytes = result)
+        return own_response
+
     def recursive_query(self, packet: dns_packet, own_response: dns_packet, handler: UDP_Handler) -> dns_packet:
-        i = own_response.q_info
-        t = own_response.q_type
-        query = dns_packet(flags = (True, False, False), queryInfo = (i,t))
         visited_ips = set()
         visited_ips.add(self.ip)
-        while own_response.responseCode == 2 or (own_response.responseCode == 1 and own_response.flags[1]):
-            self.cache_query(own_response)
+        # while own_response.responseCode == 2 or (own_response.responseCode == 1 and own_response.flags[1]):
+        while own_response.responseCode in [1, 2]:
             ns_list = own_response.val_zone.copy()
             ns_list = list(map(lambda x: DB_entry(from_str=x, is_Eternal=False), ns_list))
             ns_list.sort(key=lambda x: x.priority)
-            next_domain_to_be_queryd = ns_list[0].value
-            possible_IPs = list(map(lambda x: ip.IP(x.value), self.db.get_extra(next_domain_to_be_queryd)))
-            chosen_IP = possible_IPs[0]
-            if chosen_IP in visited_ips:
+            handler.socket.settimeout(2.0)
+            for next_domain_to_be_queryd in ns_list:
+                possible_IPs = list(map(lambda x: ip.IP(x.value), self.db.get_extra(str(next_domain_to_be_queryd))))
+                chosen_IP = possible_IPs[0]
+                if chosen_IP in visited_ips:
+                    break
+                visited_ips.add(chosen_IP)
+                handler.send(packet.encodePacket(), chosen_IP)
+                try:
+                    result, _ = handler.receive()
+                except:
+                    continue
                 break
-            visited_ips.add(chosen_IP)
-            handler.send(packet, chosen_IP)
-            result, _ = handler.receive()
+            handler.socket.settimeout(None)
             own_response = dns_packet(encoded_bytes = result)
-        self.cache_query(own_response)
-        own_response.flags[2] = False
+            self.cache_query(own_response)
+        own_response.flags = (own_response.flags[0], own_response.flags[1], False)
         return own_response
 
     def cache_query(self, response: dns_packet):
@@ -197,9 +222,7 @@ class SP:
         possible_ips = f.read().splitlines()
         r = []
         for i in possible_ips:
-            is_ip, has_port = ip.check_ip(i)
-            if is_ip:
-                r.append(ip.IP(i, has_port=has_port))
+            r.append(i)
         return r
 
     def stop(self, reason):
@@ -219,8 +242,6 @@ class SP:
                 self.ss_domains[domain] = server_ip
 
         self.zone_transfer_threads = []
-
-        print(self.ss_domains)
         zone_transfer_lock = threading.Lock()
         for domain in self.ss_domains:
             print(f"\n{domain}\n")

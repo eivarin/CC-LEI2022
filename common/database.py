@@ -46,7 +46,7 @@ class DB_entry:
         return unparsed_str
 
     def is_Alive(self):
-        return self.is_Eternal or self.expiring_TTL - int(time()) < 0
+        return self.is_Eternal or int(time()) - self.expiring_TTL  < 0
 
 class DB:
 
@@ -120,7 +120,6 @@ class DB:
                 if zone not in self.zone_to_domains:
                     self.zone_to_domains[zone] = set()
         
-        #add st entrys
         for i, st in enumerate(st_list):
             ns_name = f"ns{i}."
             ns_entry = DB_entry("NS", [".",ns_name],{"@":"."})
@@ -156,14 +155,15 @@ class DB:
         if entry.parameter not in self.__db:
             self.__db[entry.parameter] = {}
         if entry.type not in self.__db[entry.parameter]:
-            self.__db[entry.parameter][entry.type] = []
-        self.__db[entry.parameter][entry.type].append(entry)
+            self.__db[entry.parameter][entry.type] = set()
+        self.__db[entry.parameter][entry.type].add(entry)
         
     def add_cache_entry(self, entry:DB_entry):
         domain = entry.parameter
-        if domain in self.domain_to_zones == domain in self.zone_to_domains["cache"]:   
+        if (domain in self.domain_to_zones) == (domain in self.zone_to_domains["cache"]):   
             self.zone_to_domains["cache"].add(domain)
             self.domain_to_zones[domain] = "cache"
+            self.delete_single_entry(entry)
             self.add(entry)
         else:
             pass
@@ -180,6 +180,11 @@ class DB:
                 del self.__db[dom]
                 del self.domain_to_zones[dom]
             self.zone_to_domains[zone] = set()
+
+    def delete_single_entry(self, entry: DB_entry):
+        print(entry)
+        if entry.parameter in self.__db and entry.type in self.__db[entry.parameter] and entry in self.__db[entry.parameter][entry.type]:
+            self.__db[entry.parameter][entry.type].remove(entry)
 
     def is_domain_cache(self, domain):
         return domain in self.zone_to_domains["cache"]
@@ -217,7 +222,6 @@ class DB:
                         total += size
                         con.sendall(size.to_bytes(2, byteorder='big'))
                         con.sendall(unparsed_str.encode())
-            print(self.__db)
         con.close()
         return total
 
@@ -232,6 +236,7 @@ class DB:
             for entry in self.__db[domain]["A"]:
                 if entry.is_Alive():
                     result.append(entry)
+            print(result)
             return result
 
 #check CNAME
@@ -240,8 +245,27 @@ class DB:
 #
 #
 #
+    def filter_by_is_alive(self):
+        td = []
+        for domain in self.zone_to_domains["cache"]:
+            todelete = []
+            for t, entry_list in self.__db[domain].items():
+                entry_list = set(filter(lambda x: x.is_Alive(), entry_list))
+                if len(entry_list) == 0:
+                    todelete.append(t)
+            for t in todelete:
+                del self.__db[domain][t]
+            if len(self.__db[domain].keys()) == 0:
+                td.append(domain)
+        for domain in td:
+            del self.__db[domain]        
+            del self.domain_to_zones[domain]
+            self.zone_to_domains["cache"].remove(domain)
+
+
     def query(self, packet: dns_packet) -> dns_packet:
         # try:
+            self.filter_by_is_alive()
             response_code = 0
 
             #check cname
@@ -279,8 +303,10 @@ class DB:
             else:
                 p = packet.q_info
                 response = [str(x) for x in self.__db[p][packet.q_type] if x.is_Alive()]
-
-            auths = [str(x) for x in self.__db[p]['NS']if x.is_Alive()]
+            
+            auths = []
+            if "NS" in self.__db[p]:
+                auths = [str(x) for x in self.__db[p]['NS']if x.is_Alive()]
             extra = [self.get_extra(x) for x in auths]
 
             if packet.q_type not in ["A", "DEFAULT", "SOASP", "SOAADMIN", "SOASERIAL", "SOAREFRESH", "SOARETRY", "SOAEXPIRE"] and response != []:

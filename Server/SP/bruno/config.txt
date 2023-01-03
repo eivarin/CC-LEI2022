@@ -1,6 +1,6 @@
 #Ficheiro de Configuração do Servidor Primário do Dominio bruno
 
-bruno. DB SP/bruno/database.db
+bruno. DB database.db
 
 bruno. SS 10.0.0.15:53
 bruno. SS 10.0.0.30:53

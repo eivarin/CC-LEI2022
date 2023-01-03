@@ -12,7 +12,7 @@ TTL DEFAULT 86400
 @ NS ns1.dias. TTL
 @ NS ns2.dias. TTL
 @ NS ns3.dias. TTL
-bruno. @ NS sp.bruno.dias. TTL
+bruno.@ NS sp.bruno.dias. TTL
 @ MX mx1.dias. TTL 10
 @ MX mx2.dias. TTL 20
 ns1 A 10.0.0.14 TTL
